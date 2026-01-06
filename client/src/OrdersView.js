@@ -14,7 +14,7 @@ function OrdersView() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/orders');
+      const response = await fetch('https://oyushop.onrender.com/api/orders');
       const data = await response.json();
       setOrders(data);
     } catch (err) {
@@ -36,7 +36,7 @@ function OrdersView() {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+      const response = await fetch(`https://oyushop.onrender.com/api/orders/${orderId}`, {
         method: 'DELETE'
       });
 
@@ -51,7 +51,7 @@ function OrdersView() {
 
   const handleUpdateStatus = async (orderId, status) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const response = await fetch(`https://oyushop.onrender.com/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })

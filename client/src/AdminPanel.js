@@ -25,7 +25,7 @@ function AdminPanel({ onLogout }) {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/products');
+      const response = await fetch('https://oyushop.onrender.com/api/products');
       const data = await response.json();
       setProducts(data);
     } catch (err) {
@@ -114,7 +114,7 @@ function AdminPanel({ onLogout }) {
 
       if (editingId) {
         // Засах
-        const response = await fetch(`http://localhost:5000/api/products/${editingId}`, {
+        const response = await fetch(`https://oyushop.onrender.com/api/products/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(submitData)
@@ -130,7 +130,7 @@ function AdminPanel({ onLogout }) {
         }
       } else {
         // Нэмэх
-        const response = await fetch('http://localhost:5000/api/products', {
+        const response = await fetch('https://oyushop.onrender.com/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(submitData)
@@ -156,7 +156,7 @@ function AdminPanel({ onLogout }) {
   const handleDelete = async (id) => {
     if (window.confirm('Энэ барааг устгахыг хүсч байна уу?')) {
       try {
-        const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+        const response = await fetch(`https://oyushop.onrender.com/api/products/${id}`, {
           method: 'DELETE'
         });
 
@@ -177,7 +177,7 @@ function AdminPanel({ onLogout }) {
     const newStock = Math.max(0, (product.stock || 0) + change);
     
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+      const response = await fetch(`https://oyushop.onrender.com/api/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...product, stock: newStock })
