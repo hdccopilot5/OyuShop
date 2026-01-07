@@ -120,7 +120,7 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
             </div>
 
             <button type="submit" disabled={loading} className="submit-btn">
-              {loading ? 'Илгээж байна...' : '✅ Захиалгаг баталгаажуулах'}
+              {loading ? 'Илгээж байна...' : '✅ Захиалга баталгаажуулах'}
             </button>
           </form>
         </div>

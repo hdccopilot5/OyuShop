@@ -18,6 +18,8 @@ function AdminPanel({ onLogout }) {
   const [message, setMessage] = useState('');
   const [imagePreview, setImagePreview] = useState('');
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -230,10 +232,20 @@ function AdminPanel({ onLogout }) {
 
       <div className="admin-content">
         <div className="form-section">
-          <h2>{editingId ? '📝 Барааг засах' : '➕ Шинэ бараа нэмэх'}</h2>
+          <div className="form-header">
+            <h2>{editingId ? '📝 Барааг засах' : '➕ Шинэ бараа нэмэх'}</h2>
+            <button 
+              type="button"
+              onClick={() => setShowForm(!showForm)} 
+              className="toggle-form-btn"
+            >
+              {showForm ? '▲ Хаах' : '▼ Нээх'}
+            </button>
+          </div>
 
           {message && <div className={`message ${message.includes('✅') ? 'success' : 'error'}`}>{message}</div>}
 
+          {showForm && (
           <form onSubmit={handleSubmit} className="admin-form">
             <div className="form-group">
               <label>Барааны нэр *</label>
@@ -367,10 +379,23 @@ function AdminPanel({ onLogout }) {
               )}
             </div>
           </form>
+          )}
         </div>
 
         <div className="products-section">
-          <h2>📦 Бараа бүртгэл ({products.length})</h2>
+          <div className="products-header">
+            <h2>📦 Бүх бараа ({products.filter(p => 
+              p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              p.description.toLowerCase().includes(searchQuery.toLowerCase())
+            ).length})</h2>
+            <input
+              type="text"
+              placeholder="🔍 Бараа хайх..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
 
           <div className="products-table-wrapper">
             <table className="products-table">
@@ -384,7 +409,12 @@ function AdminPanel({ onLogout }) {
                 </tr>
               </thead>
               <tbody>
-                {products.map(product => (
+                {products
+                  .filter(p => 
+                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    p.description.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map(product => (
                   <tr key={product._id}>
                     <td>
                       <strong>{product.name}</strong>
