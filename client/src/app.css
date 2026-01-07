@@ -93,6 +93,62 @@ body {
   font-weight: 300;
 }
 
+.contact-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+  border-radius: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.social-link:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: translateY(-1px);
+}
+
+.social-icon {
+  font-size: 1.2rem;
+}
+
+.phone-list {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.18);
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.phone-number {
+  color: white;
+  text-decoration: none;
+}
+
+.phone-number:hover {
+  text-decoration: underline;
+}
+
+.phone-dot {
+  opacity: 0.7;
+}
+
 /* Content */
 .content {
   flex: 1;

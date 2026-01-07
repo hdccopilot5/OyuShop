@@ -54,6 +54,24 @@ function ShopPage({
             <div className="header-text">
               <h1 className="title">Oyu online delguur</h1>
               <p className="subtitle">🛍️Манай дэлгүүр нь #онлайн бөгөөд чанартай барааг #хамгийн_хямд үнээр найрсаг үйлчилгээгээр санал болгохыг зорин ажилладаг 🤗 Бүх бараа #хүргэлттэй. Бид танд өөрсдийн туршиж үзсэн бараагаа санал болгодог гэдгээрээ онцлогтой 💕</p>
+              <div className="contact-row">
+                <a
+                  className="social-link"
+                  href="https://www.facebook.com/profile.php?id=61575911835307"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Facebook хуудас"
+                >
+                  <span className="social-icon" aria-hidden>📘</span>
+                  Facebook хуудас
+                </a>
+                <div className="phone-list" aria-label="Холбогдох утас">
+                  <span className="phone-label">📞</span>
+                  <a href="tel:99752020" className="phone-number">9975-2020</a>
+                  <span className="phone-dot">•</span>
+                  <a href="tel:94346134" className="phone-number">9434-6134</a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
