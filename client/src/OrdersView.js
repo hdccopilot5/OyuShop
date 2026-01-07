@@ -33,9 +33,21 @@ function OrdersView() {
         return `📅 ${diffDays} өдрийн өмнө`;
       }
       // Бусад тохиолдолд
-      return `📅 ${date.toLocaleDateString('mn-MN')} ${date.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })}`;
+      const absolute = `${date.toLocaleDateString('mn-MN')} ${date.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })}`;
+      return `📅 ${absolute}`;
     } catch (e) {
       return dateString;
+    }
+  };
+
+  const formatDateWithAbsolute = (dateString) => {
+    const relative = formatDate(dateString);
+    try {
+      const date = new Date(dateString);
+      const absolute = `${date.toLocaleDateString('mn-MN')} ${date.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })}`;
+      return `${relative} • ${absolute}`;
+    } catch (e) {
+      return relative;
     }
   };
 
@@ -134,7 +146,7 @@ function OrdersView() {
                     )}
                   </td>
                   <td className="price">{order.totalPrice}₮</td>
-                  <td className="date">{formatDate(order.orderDate)}</td>
+                  <td className="date">{formatDateWithAbsolute(order.orderDate)}</td>
                   <td className="status">
                     <span className={`status-badge ${
                       order.status === 'Хүргэгдсэн' ? 'delivered' : 
@@ -207,7 +219,7 @@ function OrdersView() {
 
               <div className="detail-group">
                 <label>Захиалгын огноо:</label>
-                <p>{formatDate(selectedOrder.orderDate)}</p>
+                <p>{formatDateWithAbsolute(selectedOrder.orderDate)}</p>
               </div>
             </div>
 
