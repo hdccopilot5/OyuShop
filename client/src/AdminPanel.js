@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './AdminPanel.css';
 import OrdersView from './OrdersView';
+import { BrowserMultiFormatReader, DecodeHintType } from '@zxing/library';
 
 function AdminPanel({ onLogout }) {
   const [products, setProducts] = useState([]);
@@ -54,9 +55,7 @@ function AdminPanel({ onLogout }) {
   }, [showInventory]);
 
   useEffect(() => {
-    if ('BarcodeDetector' in window) {
-      setBarcodeSupport(true);
-    }
+    setBarcodeSupport(true);
     return () => {
       stopCameraScan();
     };
@@ -155,28 +154,24 @@ function AdminPanel({ onLogout }) {
     setIsScanning(false);
   };
 
-  const decodeWithDetector = async (bitmap) => {
-    if (!barcodeSupport) return null;
+  const decodeWithZXing = async (canvas) => {
     try {
-      const detector = new window.BarcodeDetector({
-        formats: ['code_128', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code']
-      });
-      const codes = await detector.detect(bitmap);
-      if (codes && codes.length > 0) {
-        return codes[0].rawValue || null;
-      }
+      const reader = new BrowserMultiFormatReader();
+      const hints = new Map();
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+        'CODE_128', 'CODE_39', 'CODE_93',
+        'EAN_13', 'EAN_8',
+        'UPC_A', 'UPC_E',
+        'QR_CODE', 'DATA_MATRIX', 'AZTEC'
+      ]);
+      const result = await reader.decodeFromImageElement(canvas);
+      return result ? result.getText() : null;
     } catch (err) {
-      console.error('Barcode detect error:', err);
+      return null;
     }
-    return null;
   };
 
   const startCameraScan = async () => {
-    if (!barcodeSupport) {
-      setScanMessage('Таны браузер BarcodeDetector дэмжихгүй байна. Зураг оруулах эсвэл гараар бичнэ үү.');
-      return;
-    }
-
     try {
       stopCameraScan();
       setScanMessage('Камер асааж байна...');
@@ -196,9 +191,7 @@ function AdminPanel({ onLogout }) {
         canvas.width = video.videoWidth || 640;
         canvas.height = video.videoHeight || 480;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const bitmap = await createImageBitmap(canvas);
-        const code = await decodeWithDetector(bitmap);
-        bitmap.close && bitmap.close();
+        const code = await decodeWithZXing(canvas);
         if (code) {
           setInventoryForm(prev => ({ ...prev, productCode: code }));
           setScanMessage('✅ Код уншигдлаа: ' + code);
@@ -215,10 +208,6 @@ function AdminPanel({ onLogout }) {
   const handleImageUploadForCode = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!barcodeSupport) {
-      setScanMessage('Таны браузер зурагнаас код уншихыг дэмжихгүй байна.');
-      return;
-    }
     setScanMessage('Зурагнаас код уншиж байна...');
     try {
       const imgURL = URL.createObjectURL(file);
@@ -231,9 +220,7 @@ function AdminPanel({ onLogout }) {
           canvas.width = img.width;
           canvas.height = img.height;
           ctx.drawImage(img, 0, 0);
-          const bitmap = await createImageBitmap(canvas);
-          const code = await decodeWithDetector(bitmap);
-          bitmap.close && bitmap.close();
+          const code = await decodeWithZXing(canvas);
           if (code) {
             setInventoryForm(prev => ({ ...prev, productCode: code }));
             setScanMessage('✅ Код уншигдлаа: ' + code);
@@ -821,11 +808,7 @@ function AdminPanel({ onLogout }) {
                     </label>
                   </div>
                   <div className="scanner-status">
-                    {barcodeSupport ? (
-                      <small>{scanMessage || 'Камер эсвэл зураг оруулж код уншуулна'}</small>
-                    ) : (
-                      <small>Браузер BarcodeDetector дэмжихгүй байна. Кодыг гараар бичнэ үү.</small>
-                    )}
+                    <small>{scanMessage || 'Камер эсвэл зураг оруулж код уншуулна'}</small>
                   </div>
                   <div className="scanner-preview">
                     <video ref={videoRef} className={isScanning ? 'video-active' : ''} muted playsInline></video>
