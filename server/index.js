@@ -358,26 +358,47 @@ app.patch('/api/orders/:id/status', async (req, res) => {
   
   if (isMongoConnected) {
     try {
-      const order = await Order.findByIdAndUpdate(
-        req.params.id,
-        { status },
-        { new: true }
-      );
-      if (order) {
-        return res.json({ success: true, message: 'Статус шинэчлэгдлээ', order });
+      const order = await Order.findById(req.params.id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
       }
+
+      // Цуцалсан үед үлдэгдэл буцааж нэмэх (нэг удаа)
+      if (status === 'Цуцалсан' && order.status !== 'Цуцалсан') {
+        for (const item of order.products) {
+          await Product.findByIdAndUpdate(
+            item._id,
+            { $inc: { stock: item.quantity } }
+          );
+        }
+      }
+
+      order.status = status;
+      await order.save();
+      return res.json({ success: true, message: 'Статус шинэчлэгдлээ', order });
     } catch (err) {
       console.log('MongoDB алдаа:', err.message);
+      return res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
     }
   }
   
+  // Mock fallback
   const order = orders.find(o => o._id === req.params.id);
   if (order) {
+    if (status === 'Цуцалсан' && order.status !== 'Цуцалсан') {
+      order.products.forEach(item => {
+        const product = mockProducts.find(p => p._id === item._id);
+        if (product) {
+          product.stock = (product.stock || 0) + (item.quantity || 0);
+        }
+      });
+    }
+
     order.status = status;
-    res.json({ success: true, message: 'Статус шинэчлэгдлээ', order });
-  } else {
-    res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
+    return res.json({ success: true, message: 'Статус шинэчлэгдлээ', order });
   }
+
+  res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
 });
 
 // MongoDB-д холболт оролдох
