@@ -5,6 +5,7 @@ function OrdersView() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   // Огноо форматлах функц
   const formatDate = (dateString) => {
@@ -110,9 +111,32 @@ function OrdersView() {
     }
   };
 
+  const filteredOrders = orders.filter((order) => {
+    if (statusFilter === 'ALL') {
+      return true;
+    }
+    const currentStatus = order.status || 'Шинэ захиалга';
+    return currentStatus === statusFilter;
+  });
+
   return (
     <div className="orders-view">
-      <h2>📋 Хэрэглэгчийн захиалгууд ({orders.length})</h2>
+      <div className="orders-header">
+        <h2>📋 Хэрэглэгчийн захиалгууд ({filteredOrders.length}/{orders.length})</h2>
+        <div className="orders-filter">
+          <label htmlFor="statusFilter">Статус шүүх:</label>
+          <select
+            id="statusFilter"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="ALL">🆕 Шинэ захиалга (бүгд)</option>
+            <option value="Хүлээгдэж байгаа">⏳ Хүлээгдэж байгаа</option>
+            <option value="Хүргэгдсэн">✅ Хүргэгдсэн</option>
+            <option value="Цуцалсан">❌ Цуцалсан</option>
+          </select>
+        </div>
+      </div>
 
       {orders.length === 0 ? (
         <div className="no-orders">
@@ -133,7 +157,7 @@ function OrdersView() {
               </tr>
             </thead>
             <tbody>
-              {orders.map(order => (
+              {filteredOrders.map(order => (
                 <tr key={order._id}>
                   <td className="customer-name">{order.customerName}</td>
                   <td>{order.phone}</td>
@@ -165,11 +189,12 @@ function OrdersView() {
                       👁️
                     </button>
                     <select
-                      value={order.status || 'Хүлээгдэж байгаа'}
+                      value={order.status || 'Шинэ захиалга'}
                       onChange={(e) => handleUpdateStatus(order._id, e.target.value)}
                       className="status-select"
                       title="Статус өөрчлөх"
                     >
+                      <option value="Шинэ захиалга">🆕 Шинэ захиалга</option>
                       <option value="Хүлээгдэж байгаа">⏳ Хүлээгдэж байгаа</option>
                       <option value="Хүргэгдсэн">✅ Хүргэгдсэн</option>
                       <option value="Цуцалсан">❌ Цуцалсан</option>
