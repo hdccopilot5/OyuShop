@@ -21,16 +21,42 @@ function AdminPanel({ onLogout }) {
   const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showProducts, setShowProducts] = useState(true);
+  const [inventoryLogs, setInventoryLogs] = useState([]);
+  const [showInventory, setShowInventory] = useState(false);
+  const [inventoryForm, setInventoryForm] = useState({
+    productCode: '',
+    productName: '',
+    importDate: new Date().toISOString().split('T')[0],
+    costPrice: '',
+    salePrice: '',
+    quantity: ''
+  });
 
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    if (showInventory) {
+      fetchInventoryLogs();
+    }
+  }, [showInventory]);
 
   const fetchProducts = async () => {
     try {
       const response = await fetch('https://oyushop.onrender.com/api/products');
       const data = await response.json();
       setProducts(data);
+    } catch (err) {
+      console.error('Алдаа:', err);
+    }
+  };
+
+  const fetchInventoryLogs = async () => {
+    try {
+      const response = await fetch('https://oyushop.onrender.com/api/inventory-logs');
+      const data = await response.json();
+      setInventoryLogs(data);
     } catch (err) {
       console.error('Алдаа:', err);
     }
@@ -94,6 +120,82 @@ function AdminPanel({ onLogout }) {
       images: prev.images.filter((_, i) => i !== index)
     }));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleInventoryInputChange = (e) => {
+    const { name, value } = e.target;
+    setInventoryForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleInventorySubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch('https://oyushop.onrender.com/api/inventory-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...inventoryForm,
+          costPrice: parseFloat(inventoryForm.costPrice),
+          salePrice: parseFloat(inventoryForm.salePrice),
+          quantity: parseInt(inventoryForm.quantity)
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessage('✅ Бараа бүртгэгдлээ');
+        setInventoryForm({
+          productCode: '',
+          productName: '',
+          importDate: new Date().toISOString().split('T')[0],
+          costPrice: '',
+          salePrice: '',
+          quantity: ''
+        });
+        fetchInventoryLogs();
+      } else {
+        setMessage('❌ ' + data.message);
+      }
+    } catch (err) {
+      setMessage('❌ Алдаа гарлаа');
+      console.error('Алдаа:', err);
+    }
+  };
+
+  const handleDeleteInventoryLog = async (id) => {
+    if (!window.confirm('Энэ бүртгэлийг устгах уу?')) return;
+
+    try {
+      const response = await fetch(`https://oyushop.onrender.com/api/inventory-logs/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        fetchInventoryLogs();
+        setMessage('✅ Бүртгэл устгагдлаа');
+      }
+    } catch (err) {
+      setMessage('❌ Алдаа гарлаа');
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const response = await fetch('https://oyushop.onrender.com/api/inventory-logs/export/csv');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `baraanyg-burtgel-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setMessage('❌ Татаж авалт амжилтгүй');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -485,6 +587,153 @@ function AdminPanel({ onLogout }) {
       </div>
 
       <OrdersView />
+      
+      <div className="admin-section">
+        <div className="section-header">
+          <h2>📦 Бараа бүртгэл</h2>
+          <button 
+            type="button"
+            onClick={() => setShowInventory(!showInventory)} 
+            className="toggle-inventory-btn"
+          >
+            {showInventory ? '▲ Хаах' : '▼ Нээх'}
+          </button>
+        </div>
+
+        {showInventory && (
+          <>
+            <form onSubmit={handleInventorySubmit} className="inventory-form">
+              <h3>📝 Бараа бүртгэл</h3>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Барааны код*</label>
+                  <input 
+                    type="text" 
+                    name="productCode"
+                    value={inventoryForm.productCode}
+                    onChange={handleInventoryInputChange}
+                    placeholder="ПР-001"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Барааны нэр*</label>
+                  <input 
+                    type="text" 
+                    name="productName"
+                    value={inventoryForm.productName}
+                    onChange={handleInventoryInputChange}
+                    placeholder="Барааны нэр"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Монголд ирсэн огноо*</label>
+                  <input 
+                    type="date" 
+                    name="importDate"
+                    value={inventoryForm.importDate}
+                    onChange={handleInventoryInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Үндсэн үнэ (₮)*</label>
+                  <input 
+                    type="number" 
+                    name="costPrice"
+                    value={inventoryForm.costPrice}
+                    onChange={handleInventoryInputChange}
+                    placeholder="25000"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Зарах үнэ (₮)*</label>
+                  <input 
+                    type="number" 
+                    name="salePrice"
+                    value={inventoryForm.salePrice}
+                    onChange={handleInventoryInputChange}
+                    placeholder="35000"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Ширхэг*</label>
+                  <input 
+                    type="number" 
+                    name="quantity"
+                    value={inventoryForm.quantity}
+                    onChange={handleInventoryInputChange}
+                    placeholder="10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="submit-btn">💾 Бүртгүүлэх</button>
+            </form>
+
+            <div className="inventory-report">
+              <div className="report-header">
+                <h3>📊 Бараа бүртгэлийн тайлан</h3>
+                <button onClick={handleExportCSV} className="export-btn">📥 Excel татаж авах</button>
+              </div>
+
+              {inventoryLogs.length === 0 ? (
+                <p className="no-data">Бүртгэл байхгүй байна</p>
+              ) : (
+                <div className="inventory-table-wrapper">
+                  <table className="inventory-table">
+                    <thead>
+                      <tr>
+                        <th>Барааны код</th>
+                        <th>Нэр</th>
+                        <th>Ирсэн огноо</th>
+                        <th>Үндсэн үнэ</th>
+                        <th>Зарах үнэ</th>
+                        <th>Ширхэг</th>
+                        <th>Бүртгэлийн огноо</th>
+                        <th>Үйлдэл</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {inventoryLogs.map(log => (
+                        <tr key={log._id}>
+                          <td className="code">{log.productCode}</td>
+                          <td>{log.productName}</td>
+                          <td>{new Date(log.importDate).toLocaleDateString('mn-MN')}</td>
+                          <td className="price">{log.costPrice}₮</td>
+                          <td className="price">{log.salePrice}₮</td>
+                          <td className="quantity">{log.quantity}</td>
+                          <td>{new Date(log.createdAt).toLocaleString('mn-MN')}</td>
+                          <td>
+                            <button 
+                              onClick={() => handleDeleteInventoryLog(log._id)}
+                              className="delete-btn"
+                              title="Устгах"
+                            >
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
       
       <footer className="footer">
         <p>© 2026.Oyu online delguur. Зохиогчийн бүх эрх хуулиар хамгаалагдсан болно.</p>

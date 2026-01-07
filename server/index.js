@@ -45,6 +45,18 @@ const OrderSchema = new mongoose.Schema({
 
 const Order = mongoose.model('Order', OrderSchema);
 
+const InventoryLogSchema = new mongoose.Schema({
+  productCode: String,
+  productName: String,
+  importDate: Date,
+  costPrice: Number,
+  salePrice: Number,
+  quantity: Number,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const InventoryLog = mongoose.model('InventoryLog', InventoryLogSchema);
+
 // Mock өгөгдөл
 const mockProducts = [
   {
@@ -104,6 +116,7 @@ const mockProducts = [
 ];
 
 let isMongoConnected = false;
+let inventoryLogs = [];
 
 // Хэрэглэгчийн захиалгууд (mock)
 let orders = [
@@ -444,6 +457,117 @@ app.patch('/api/orders/:id/status', async (req, res) => {
   }
 
   res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
+});
+
+// API: Бараа бүртгэл үүсгэх (админ)
+app.post('/api/inventory-logs', async (req, res) => {
+  const { productCode, productName, importDate, costPrice, salePrice, quantity } = req.body;
+  
+  if (!productCode || !productName || !costPrice || !salePrice || !quantity) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Бүх мэдээлэл нөхөөрэй' 
+    });
+  }
+
+  const logData = {
+    productCode,
+    productName,
+    importDate: new Date(importDate),
+    costPrice,
+    salePrice,
+    quantity: parseInt(quantity),
+    createdAt: new Date()
+  };
+
+  if (isMongoConnected) {
+    try {
+      const log = new InventoryLog(logData);
+      await log.save();
+      return res.json({ success: true, message: 'Бараа бүртгэгдлээ', log });
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+      return res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
+    }
+  }
+
+  // Mock fallback
+  const log = { _id: Date.now().toString(), ...logData };
+  inventoryLogs.push(log);
+  res.json({ success: true, message: 'Бараа бүртгэгдлээ', log });
+});
+
+// API: Бүх бараа бүртгэлүүдийг авах (админ)
+app.get('/api/inventory-logs', async (req, res) => {
+  if (isMongoConnected) {
+    try {
+      const logs = await InventoryLog.find().sort({ createdAt: -1 });
+      return res.json(logs);
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+    }
+  }
+  
+  res.json(inventoryLogs);
+});
+
+// API: Бараа бүртгэлийг Excel болгон татаж авах
+app.get('/api/inventory-logs/export/csv', async (req, res) => {
+  let logs = [];
+  
+  if (isMongoConnected) {
+    try {
+      logs = await InventoryLog.find().sort({ createdAt: -1 });
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+      logs = inventoryLogs;
+    }
+  } else {
+    logs = inventoryLogs;
+  }
+
+  // CSV формат үүсгэх
+  const headers = ['Барааны код', 'Барааны нэр', 'Монголд ирсэн огноо', 'Үндсэн үнэ', 'Зарах үнэ', 'Ширхэг', 'Бүртгэлийн огноо'];
+  const csvRows = logs.map(log => [
+    log.productCode,
+    log.productName,
+    new Date(log.importDate).toLocaleDateString('mn-MN'),
+    log.costPrice,
+    log.salePrice,
+    log.quantity,
+    new Date(log.createdAt).toLocaleString('mn-MN')
+  ]);
+
+  const csvContent = [
+    headers.join(','),
+    ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n');
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename=baraanyg-burtgel-' + new Date().toISOString().split('T')[0] + '.csv');
+  res.send('\ufeff' + csvContent); // BOM for Excel UTF-8
+});
+
+// API: Бараа бүртгэл устгах (админ)
+app.delete('/api/inventory-logs/:id', async (req, res) => {
+  if (isMongoConnected) {
+    try {
+      const result = await InventoryLog.findByIdAndDelete(req.params.id);
+      if (result) {
+        return res.json({ success: true, message: 'Бүртгэл устгагдлаа' });
+      }
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+    }
+  }
+  
+  const index = inventoryLogs.findIndex(log => log._id === req.params.id);
+  if (index !== -1) {
+    inventoryLogs.splice(index, 1);
+    res.json({ success: true, message: 'Бүртгэл устгагдлаа' });
+  } else {
+    res.status(404).json({ success: false, message: 'Бүртгэл олдсонгүй' });
+  }
 });
 
 // MongoDB-д холболт оролдох
