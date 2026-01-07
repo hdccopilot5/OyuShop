@@ -52,6 +52,9 @@ const InventoryLogSchema = new mongoose.Schema({
   costPrice: Number,
   salePrice: Number,
   quantity: Number,
+  cargoPrice: { type: Number, default: 0 },
+  inspectionCost: { type: Number, default: 0 },
+  otherCost: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -461,7 +464,7 @@ app.patch('/api/orders/:id/status', async (req, res) => {
 
 // API: Бараа бүртгэл үүсгэх (админ)
 app.post('/api/inventory-logs', async (req, res) => {
-  const { productCode, productName, importDate, costPrice, salePrice, quantity } = req.body;
+  const { productCode, productName, importDate, costPrice, salePrice, quantity, cargoPrice, inspectionCost, otherCost } = req.body;
   
   if (!productCode || !productName || !costPrice || !salePrice || !quantity) {
     return res.status(400).json({ 
@@ -474,9 +477,12 @@ app.post('/api/inventory-logs', async (req, res) => {
     productCode,
     productName,
     importDate: new Date(importDate),
-    costPrice,
-    salePrice,
+    costPrice: parseFloat(costPrice),
+    salePrice: parseFloat(salePrice),
     quantity: parseInt(quantity),
+    cargoPrice: parseFloat(cargoPrice) || 0,
+    inspectionCost: parseFloat(inspectionCost) || 0,
+    otherCost: parseFloat(otherCost) || 0,
     createdAt: new Date()
   };
 
@@ -527,16 +533,31 @@ app.get('/api/inventory-logs/export/csv', async (req, res) => {
   }
 
   // CSV формат үүсгэх
-  const headers = ['Барааны код', 'Барааны нэр', 'Монголд ирсэн огноо', 'Үндсэн үнэ', 'Зарах үнэ', 'Ширхэг', 'Бүртгэлийн огноо'];
-  const csvRows = logs.map(log => [
-    log.productCode,
-    log.productName,
-    new Date(log.importDate).toLocaleDateString('mn-MN'),
-    log.costPrice,
-    log.salePrice,
-    log.quantity,
-    new Date(log.createdAt).toLocaleString('mn-MN')
-  ]);
+  const headers = ['Барааны код', 'Барааны нэр', 'Монголд ирсэн огноо', 'Үндсэн үнэ', 'Зарах үнэ', 'Ширхэг', 'Карго үнэ', 'Баталтын зардал', 'Бусад зардал', 'Нийт зардал', 'Нийт орлого', 'Нийт ашиг', 'Бүртгэлийн огноо'];
+  const csvRows = logs.map(log => {
+    const cargoPrice = log.cargoPrice || 0;
+    const inspectionCost = log.inspectionCost || 0;
+    const otherCost = log.otherCost || 0;
+    const totalCost = (log.costPrice * log.quantity) + cargoPrice + inspectionCost + otherCost;
+    const totalRevenue = log.salePrice * log.quantity;
+    const totalProfit = totalRevenue - totalCost;
+    
+    return [
+      log.productCode,
+      log.productName,
+      new Date(log.importDate).toLocaleDateString('mn-MN'),
+      log.costPrice,
+      log.salePrice,
+      log.quantity,
+      cargoPrice,
+      inspectionCost,
+      otherCost,
+      totalCost,
+      totalRevenue,
+      totalProfit,
+      new Date(log.createdAt).toLocaleString('mn-MN')
+    ];
+  });
 
   const csvContent = [
     headers.join(','),

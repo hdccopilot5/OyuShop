@@ -30,7 +30,10 @@ function AdminPanel({ onLogout }) {
     importDate: new Date().toISOString().split('T')[0],
     costPrice: '',
     salePrice: '',
-    quantity: ''
+    quantity: '',
+    cargoPrice: '',
+    inspectionCost: '',
+    otherCost: ''
   });
 
   useEffect(() => {
@@ -142,7 +145,10 @@ function AdminPanel({ onLogout }) {
           ...inventoryForm,
           costPrice: parseFloat(inventoryForm.costPrice),
           salePrice: parseFloat(inventoryForm.salePrice),
-          quantity: parseInt(inventoryForm.quantity)
+          quantity: parseInt(inventoryForm.quantity),
+          cargoPrice: parseFloat(inventoryForm.cargoPrice) || 0,
+          inspectionCost: parseFloat(inventoryForm.inspectionCost) || 0,
+          otherCost: parseFloat(inventoryForm.otherCost) || 0
         })
       });
 
@@ -155,7 +161,10 @@ function AdminPanel({ onLogout }) {
           importDate: new Date().toISOString().split('T')[0],
           costPrice: '',
           salePrice: '',
-          quantity: ''
+          quantity: '',
+          cargoPrice: '',
+          inspectionCost: '',
+          otherCost: ''
         });
         fetchInventoryLogs();
       } else {
@@ -690,8 +699,39 @@ function AdminPanel({ onLogout }) {
                     placeholder="10"
                     required
                   />
+                </div>                <div className="form-group">
+                  <label>Карго үнэ (₮)</label>
+                  <input 
+                    type="number" 
+                    name="cargoPrice"
+                    value={inventoryForm.cargoPrice}
+                    onChange={handleInventoryInputChange}
+                    placeholder="5000"
+                  />
                 </div>
               </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Баталтын зардал (₮)</label>
+                  <input 
+                    type="number" 
+                    name="inspectionCost"
+                    value={inventoryForm.inspectionCost}
+                    onChange={handleInventoryInputChange}
+                    placeholder="2000"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Бусад зардал (₮)</label>
+                  <input 
+                    type="number" 
+                    name="otherCost"
+                    value={inventoryForm.otherCost}
+                    onChange={handleInventoryInputChange}
+                    placeholder="1000"
+                  />
+                </div>              </div>
 
               <button type="submit" className="submit-btn">💾 Бүртгүүлэх</button>
             </form>
@@ -715,31 +755,46 @@ function AdminPanel({ onLogout }) {
                         <th>Үндсэн үнэ</th>
                         <th>Зарах үнэ</th>
                         <th>Ширхэг</th>
-                        <th>Бүртгэлийн огноо</th>
+                        <th>Нийт зардал</th>
+                        <th>Нийт орлого</th>
+                        <th>Ашиг</th>
                         <th>Үйлдэл</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {inventoryLogs.map(log => (
-                        <tr key={log._id}>
-                          <td className="code">{log.productCode}</td>
-                          <td>{log.productName}</td>
-                          <td>{new Date(log.importDate).toLocaleDateString('mn-MN')}</td>
-                          <td className="price">{log.costPrice}₮</td>
-                          <td className="price">{log.salePrice}₮</td>
-                          <td className="quantity">{log.quantity}</td>
-                          <td>{new Date(log.createdAt).toLocaleString('mn-MN')}</td>
-                          <td>
-                            <button 
-                              onClick={() => handleDeleteInventoryLog(log._id)}
-                              className="delete-btn"
-                              title="Устгах"
-                            >
-                              🗑️
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {inventoryLogs.map(log => {
+                        const cargoPrice = log.cargoPrice || 0;
+                        const inspectionCost = log.inspectionCost || 0;
+                        const otherCost = log.otherCost || 0;
+                        const totalCost = (log.costPrice * log.quantity) + cargoPrice + inspectionCost + otherCost;
+                        const totalRevenue = log.salePrice * log.quantity;
+                        const totalProfit = totalRevenue - totalCost;
+                        
+                        return (
+                          <tr key={log._id}>
+                            <td className="code">{log.productCode}</td>
+                            <td>{log.productName}</td>
+                            <td>{new Date(log.importDate).toLocaleDateString('mn-MN')}</td>
+                            <td className="price">{log.costPrice}₮</td>
+                            <td className="price">{log.salePrice}₮</td>
+                            <td className="quantity">{log.quantity}</td>
+                            <td className="cost">{totalCost}₮</td>
+                            <td className="revenue">{totalRevenue}₮</td>
+                            <td className={totalProfit >= 0 ? 'profit' : 'loss'}>
+                              {totalProfit >= 0 ? '+' : ''}{totalProfit}₮
+                            </td>
+                            <td>
+                              <button 
+                                onClick={() => handleDeleteInventoryLog(log._id)}
+                                className="delete-btn"
+                                title="Устгах"
+                              >
+                                🗑️
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

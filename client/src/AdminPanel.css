@@ -642,6 +642,32 @@
   color: #f59e0b;
 }
 
+.inventory-table .cost {
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.inventory-table .revenue {
+  font-weight: 600;
+  color: #10b981;
+}
+
+.inventory-table .profit {
+  font-weight: 700;
+  color: #059669;
+  background-color: #d1fae5;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.inventory-table .loss {
+  font-weight: 700;
+  color: #dc2626;
+  background-color: #fee2e2;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
 .inventory-table .delete-btn {
   padding: 6px 10px;
   background-color: #fee2e2;
