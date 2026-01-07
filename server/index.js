@@ -591,6 +591,44 @@ app.delete('/api/inventory-logs/:id', async (req, res) => {
   }
 });
 
+// API: Бараа бүртгэл засах (админ)
+app.put('/api/inventory-logs/:id', async (req, res) => {
+  const { productCode, productName, importDate, costPrice, salePrice, quantity, cargoPrice, inspectionCost, otherCost } = req.body;
+  
+  const updateData = {
+    productCode,
+    productName,
+    importDate: new Date(importDate),
+    costPrice: parseFloat(costPrice),
+    salePrice: parseFloat(salePrice),
+    quantity: parseInt(quantity),
+    cargoPrice: parseFloat(cargoPrice) || 0,
+    inspectionCost: parseFloat(inspectionCost) || 0,
+    otherCost: parseFloat(otherCost) || 0
+  };
+
+  if (isMongoConnected) {
+    try {
+      const updated = await InventoryLog.findByIdAndUpdate(req.params.id, updateData, { new: true });
+      if (updated) {
+        return res.json({ success: true, message: 'Бүртгэл шинэчлэгдлээ', log: updated });
+      }
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+      return res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
+    }
+  }
+
+  // Mock fallback
+  const index = inventoryLogs.findIndex(log => log._id === req.params.id);
+  if (index !== -1) {
+    inventoryLogs[index] = { ...inventoryLogs[index], ...updateData };
+    return res.json({ success: true, message: 'Бүртгэл шинэчлэгдлээ', log: inventoryLogs[index] });
+  }
+
+  res.status(404).json({ success: false, message: 'Бүртгэл олдсонгүй' });
+});
+
 // MongoDB-д холболт оролдох
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/babyshop';
 mongoose

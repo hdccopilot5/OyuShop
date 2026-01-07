@@ -24,6 +24,7 @@ function AdminPanel({ onLogout }) {
   const [inventoryLogs, setInventoryLogs] = useState([]);
   const [showInventory, setShowInventory] = useState(false);
   const [showOrders, setShowOrders] = useState(true);
+  const [editingLogId, setEditingLogId] = useState(null);
   const [inventoryForm, setInventoryForm] = useState({
     productCode: '',
     productName: '',
@@ -138,8 +139,14 @@ function AdminPanel({ onLogout }) {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://oyushop.onrender.com/api/inventory-logs', {
-        method: 'POST',
+      const url = editingLogId 
+        ? `https://oyushop.onrender.com/api/inventory-logs/${editingLogId}`
+        : 'https://oyushop.onrender.com/api/inventory-logs';
+      
+      const method = editingLogId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...inventoryForm,
@@ -154,7 +161,7 @@ function AdminPanel({ onLogout }) {
 
       const data = await response.json();
       if (data.success) {
-        setMessage('✅ Бараа бүртгэгдлээ');
+        setMessage(editingLogId ? '✅ Бүртгэл шинэчлэгдлээ' : '✅ Бараа бүртгэгдлээ');
         setInventoryForm({
           productCode: '',
           productName: '',
@@ -166,6 +173,7 @@ function AdminPanel({ onLogout }) {
           inspectionCost: '',
           otherCost: ''
         });
+        setEditingLogId(null);
         fetchInventoryLogs();
       } else {
         setMessage('❌ ' + data.message);
@@ -174,6 +182,37 @@ function AdminPanel({ onLogout }) {
       setMessage('❌ Алдаа гарлаа');
       console.error('Алдаа:', err);
     }
+  };
+
+  const handleEditInventoryLog = (log) => {
+    setInventoryForm({
+      productCode: log.productCode,
+      productName: log.productName,
+      importDate: new Date(log.importDate).toISOString().split('T')[0],
+      costPrice: log.costPrice.toString(),
+      salePrice: log.salePrice.toString(),
+      quantity: log.quantity.toString(),
+      cargoPrice: (log.cargoPrice || 0).toString(),
+      inspectionCost: (log.inspectionCost || 0).toString(),
+      otherCost: (log.otherCost || 0).toString()
+    });
+    setEditingLogId(log._id);
+    window.scrollTo({ top: document.querySelector('.inventory-form').offsetTop - 100, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingLogId(null);
+    setInventoryForm({
+      productCode: '',
+      productName: '',
+      importDate: new Date().toISOString().split('T')[0],
+      costPrice: '',
+      salePrice: '',
+      quantity: '',
+      cargoPrice: '',
+      inspectionCost: '',
+      otherCost: ''
+    });
   };
 
   const handleDeleteInventoryLog = async (id) => {
@@ -626,7 +665,7 @@ function AdminPanel({ onLogout }) {
         {showInventory && (
           <>
             <form onSubmit={handleInventorySubmit} className="inventory-form">
-              <h3>📝 Бараа бүртгэл</h3>
+              <h3>📝 {editingLogId ? '✏️ Бүртгэл засах' : 'Бараа бүртгэл'}</h3>
               
               <div className="form-row">
                 <div className="form-group">
@@ -733,7 +772,18 @@ function AdminPanel({ onLogout }) {
                   />
                 </div>              </div>
 
-              <button type="submit" className="submit-btn">💾 Бүртгүүлэх</button>
+              <button type="submit" className="submit-btn">
+                {editingLogId ? '💾 Шинэчлэх' : '💾 Бүртгүүлэх'}
+              </button>
+              {editingLogId && (
+                <button 
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="cancel-btn"
+                >
+                  ✕ Болих
+                </button>
+              )}
             </form>
 
             <div className="inventory-report">
@@ -784,6 +834,13 @@ function AdminPanel({ onLogout }) {
                               {totalProfit >= 0 ? '+' : ''}{totalProfit}₮
                             </td>
                             <td>
+                              <button 
+                                onClick={() => handleEditInventoryLog(log)}
+                                className="edit-btn"
+                                title="Засах"
+                              >
+                                ✏️
+                              </button>
                               <button 
                                 onClick={() => handleDeleteInventoryLog(log._id)}
                                 className="delete-btn"

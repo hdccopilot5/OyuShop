@@ -559,6 +559,23 @@
   transform: translateY(-2px);
 }
 
+.inventory-form .cancel-btn {
+  padding: 10px 20px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+}
+
+.inventory-form .cancel-btn:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+}
+
 .inventory-report {
   background: white;
   padding: 20px;
@@ -666,6 +683,22 @@
   background-color: #fee2e2;
   padding: 4px 8px;
   border-radius: 4px;
+}
+
+.inventory-table .edit-btn {
+  padding: 6px 10px;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  margin-right: 5px;
+}
+
+.inventory-table .edit-btn:hover {
+  background-color: #bfdbfe;
 }
 
 .inventory-table .delete-btn {
