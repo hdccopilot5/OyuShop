@@ -252,11 +252,40 @@ app.post('/api/orders', async (req, res) => {
 
   if (isMongoConnected) {
     try {
+      // Үлдэгдэл шалгах ба хасах
+      for (const item of products) {
+        const product = await Product.findById(item._id);
+        if (!product) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Бараа олдсонгүй: ${item.name}` 
+          });
+        }
+        
+        if (product.stock < item.quantity) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Хангалтгүй үлдэгдэл: ${product.name} (Үлдсэн: ${product.stock}, Захиалга: ${item.quantity})` 
+          });
+        }
+      }
+      
+      // Захиалга хадгалах
       const order = new Order(orderData);
       await order.save();
+      
+      // Үлдэгдэл хасах
+      for (const item of products) {
+        await Product.findByIdAndUpdate(
+          item._id,
+          { $inc: { stock: -item.quantity } }
+        );
+      }
+      
       return res.json({ success: true, message: 'Захиалга хүлээн авлаа', order });
     } catch (err) {
       console.log('MongoDB алдаа:', err.message);
+      return res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
     }
   }
 
