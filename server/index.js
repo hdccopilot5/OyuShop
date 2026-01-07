@@ -363,12 +363,35 @@ app.patch('/api/orders/:id/status', async (req, res) => {
         return res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
       }
 
+      const prevStatus = order.status;
+
       // Цуцалсан үед үлдэгдэл буцааж нэмэх (нэг удаа)
-      if (status === 'Цуцалсан' && order.status !== 'Цуцалсан') {
+      if (status === 'Цуцалсан' && prevStatus !== 'Цуцалсан') {
         for (const item of order.products) {
           await Product.findByIdAndUpdate(
             item._id,
             { $inc: { stock: item.quantity } }
+          );
+        }
+      }
+
+      // Цуцалсан байснаас буцааж (Хүлээгдэж / Хүргэгдсэн) болгоход үлдэгдэл дахин хасах
+      if (prevStatus === 'Цуцалсан' && status !== 'Цуцалсан') {
+        // Эхлээд хүрэлцээтэй эсэхийг шалгана
+        for (const item of order.products) {
+          const product = await Product.findById(item._id);
+          if (!product) {
+            return res.status(400).json({ success: false, message: `Бараа олдсонгүй: ${item.name}` });
+          }
+          if (product.stock < item.quantity) {
+            return res.status(400).json({ success: false, message: `Хангалтгүй үлдэгдэл: ${product.name} (Үлдсэн: ${product.stock}, Шаардлагатай: ${item.quantity})` });
+          }
+        }
+        // Хүрэлцээтэй бол дахин хасна
+        for (const item of order.products) {
+          await Product.findByIdAndUpdate(
+            item._id,
+            { $inc: { stock: -item.quantity } }
           );
         }
       }
@@ -385,11 +408,33 @@ app.patch('/api/orders/:id/status', async (req, res) => {
   // Mock fallback
   const order = orders.find(o => o._id === req.params.id);
   if (order) {
-    if (status === 'Цуцалсан' && order.status !== 'Цуцалсан') {
+    const prevStatus = order.status;
+
+    if (status === 'Цуцалсан' && prevStatus !== 'Цуцалсан') {
       order.products.forEach(item => {
         const product = mockProducts.find(p => p._id === item._id);
         if (product) {
           product.stock = (product.stock || 0) + (item.quantity || 0);
+        }
+      });
+    }
+
+    if (prevStatus === 'Цуцалсан' && status !== 'Цуцалсан') {
+      // Check stock
+      for (const item of order.products) {
+        const product = mockProducts.find(p => p._id === item._id);
+        if (!product) {
+          return res.status(400).json({ success: false, message: `Бараа олдсонгүй: ${item.name}` });
+        }
+        if ((product.stock || 0) < (item.quantity || 0)) {
+          return res.status(400).json({ success: false, message: `Хангалтгүй үлдэгдэл: ${product.name}` });
+        }
+      }
+      // Deduct
+      order.products.forEach(item => {
+        const product = mockProducts.find(p => p._id === item._id);
+        if (product) {
+          product.stock = (product.stock || 0) - (item.quantity || 0);
         }
       });
     }
