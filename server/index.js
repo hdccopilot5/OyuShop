@@ -39,7 +39,7 @@ const OrderSchema = new mongoose.Schema({
     quantity: Number
   }],
   totalPrice: Number,
-  orderDate: String,
+  orderDate: { type: Date, default: Date.now },
   status: { type: String, default: 'Шинэ захиалга' }
 });
 
@@ -117,7 +117,7 @@ let orders = [
       { _id: '1', name: 'Хүүхдийн нөөрдөг', price: 25000, quantity: 1, description: 'Дулаан, тав тухтай нөөрдөг' }
     ],
     totalPrice: 25000,
-    orderDate: new Date().toLocaleString('mn-MN'),
+    orderDate: new Date(),
     status: 'Шинэ захиалга'
   }
 ];
@@ -246,7 +246,7 @@ app.post('/api/orders', async (req, res) => {
     notes,
     products,
     totalPrice: products.reduce((sum, p) => sum + (p.price * p.quantity), 0),
-    orderDate: new Date().toLocaleString('mn-MN'),
+    orderDate: new Date(),
     status: 'Шинэ захиалга'
   };
 
