@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './AdminPanel.css';
 import OrdersView from './OrdersView';
-import { BrowserMultiFormatReader, DecodeHintType } from '@zxing/library';
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 
 function AdminPanel({ onLogout }) {
   const [products, setProducts] = useState([]);
@@ -157,15 +157,21 @@ function AdminPanel({ onLogout }) {
   const decodeWithZXing = async (canvas) => {
     try {
       const reader = new BrowserMultiFormatReader();
-      const hints = new Map();
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-        'CODE_128', 'CODE_39', 'CODE_93',
-        'EAN_13', 'EAN_8',
-        'UPC_A', 'UPC_E',
-        'QR_CODE', 'DATA_MATRIX', 'AZTEC'
-      ]);
-      const result = await reader.decodeFromImageElement(canvas);
-      return result ? result.getText() : null;
+      const imageData = canvas.toDataURL('image/png');
+      const img = new Image();
+      
+      return new Promise((resolve) => {
+        img.onload = async () => {
+          try {
+            const result = await reader.decodeFromImageElement(img);
+            resolve(result ? result.getText() : null);
+          } catch (err) {
+            resolve(null);
+          }
+        };
+        img.onerror = () => resolve(null);
+        img.src = imageData;
+      });
     } catch (err) {
       return null;
     }
@@ -175,7 +181,13 @@ function AdminPanel({ onLogout }) {
     try {
       stopCameraScan();
       setScanMessage('Камер асааж байна...');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        } 
+      });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
@@ -183,24 +195,31 @@ function AdminPanel({ onLogout }) {
       setIsScanning(true);
       setScanMessage('Код хайж байна...');
 
+      let frameCount = 0;
       scanIntervalRef.current = setInterval(async () => {
         if (!videoRef.current || !canvasRef.current) return;
         const video = videoRef.current;
         const canvas = canvasRef.current;
+        
+        // Зөвхөн 1-2 frame-ээр нэг удаа уншина (performance)
+        frameCount++;
+        if (frameCount % 3 !== 0) return;
+        
         const ctx = canvas.getContext('2d');
         canvas.width = video.videoWidth || 640;
         canvas.height = video.videoHeight || 480;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
         const code = await decodeWithZXing(canvas);
-        if (code) {
-          setInventoryForm(prev => ({ ...prev, productCode: code }));
+        if (code && code.trim()) {
+          setInventoryForm(prev => ({ ...prev, productCode: code.trim() }));
           setScanMessage('✅ Код уншигдлаа: ' + code);
           stopCameraScan();
         }
-      }, 600);
+      }, 300);
     } catch (err) {
       console.error('Camera scan error:', err);
-      setScanMessage('Камер асаахад алдаа гарлаа. Зураг оруулах эсвэл гараар бичнэ үү.');
+      setScanMessage('Камер асаахад алдаа. Зураг оруулах эсвэл гараар бичнэ үү.');
       stopCameraScan();
     }
   };
@@ -210,35 +229,42 @@ function AdminPanel({ onLogout }) {
     if (!file) return;
     setScanMessage('Зурагнаас код уншиж байна...');
     try {
-      const imgURL = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = async () => {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
         try {
-          if (!canvasRef.current) return;
-          const canvas = canvasRef.current;
-          const ctx = canvas.getContext('2d');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx.drawImage(img, 0, 0);
-          const code = await decodeWithZXing(canvas);
-          if (code) {
-            setInventoryForm(prev => ({ ...prev, productCode: code }));
-            setScanMessage('✅ Код уншигдлаа: ' + code);
-          } else {
-            setScanMessage('Код олдсонгүй. Гараар бичнэ үү.');
-          }
-        } finally {
-          URL.revokeObjectURL(imgURL);
+          const img = new Image();
+          img.onload = async () => {
+            try {
+              const zxingReader = new BrowserMultiFormatReader();
+              const result = await zxingReader.decodeFromImageElement(img);
+              const code = result ? result.getText().trim() : null;
+              if (code) {
+                setInventoryForm(prev => ({ ...prev, productCode: code }));
+                setScanMessage('✅ Код уншигдлаа: ' + code);
+              } else {
+                setScanMessage('Код олдсонгүй. Гараар бичнэ үү.');
+              }
+            } catch (err) {
+              console.error('Decode error:', err);
+              setScanMessage('Код уншихад алдаа. Гараар бичнэ үү.');
+            }
+          };
+          img.onerror = () => {
+            setScanMessage('Зургийг уншиж чадсангүй.');
+          };
+          img.src = event.target.result;
+        } catch (err) {
+          console.error('Image scan error:', err);
+          setScanMessage('Код уншихад алдаа гарлаа.');
         }
       };
-      img.onerror = () => {
-        setScanMessage('Зургийг уншиж чадсангүй.');
-        URL.revokeObjectURL(imgURL);
+      reader.onerror = () => {
+        setScanMessage('Файлыг уншиж чадсангүй.');
       };
-      img.src = imgURL;
+      reader.readAsDataURL(file);
     } catch (err) {
-      console.error('Image scan error:', err);
-      setScanMessage('Код уншихад алдаа гарлаа.');
+      console.error('File read error:', err);
+      setScanMessage('Алдаа гарлаа.');
     }
   };
 
