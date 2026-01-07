@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './AdminPanel.css';
 import OrdersView from './OrdersView';
-import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
+import jsQR from 'jsqr';
 
 function AdminPanel({ onLogout }) {
   const [products, setProducts] = useState([]);
@@ -156,22 +156,9 @@ function AdminPanel({ onLogout }) {
 
   const decodeWithZXing = async (canvas) => {
     try {
-      const reader = new BrowserMultiFormatReader();
-      const imageData = canvas.toDataURL('image/png');
-      const img = new Image();
-      
-      return new Promise((resolve) => {
-        img.onload = async () => {
-          try {
-            const result = await reader.decodeFromImageElement(img);
-            resolve(result ? result.getText() : null);
-          } catch (err) {
-            resolve(null);
-          }
-        };
-        img.onerror = () => resolve(null);
-        img.src = imageData;
-      });
+      const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
+      return code ? code.data : null;
     } catch (err) {
       return null;
     }
@@ -196,7 +183,7 @@ function AdminPanel({ onLogout }) {
       setScanMessage('Код хайж байна...');
 
       let frameCount = 0;
-      scanIntervalRef.current = setInterval(async () => {
+      scanIntervalRef.current = setInterval(() => {
         if (!videoRef.current || !canvasRef.current) return;
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -210,10 +197,12 @@ function AdminPanel({ onLogout }) {
         canvas.height = video.videoHeight || 480;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        const code = await decodeWithZXing(canvas);
-        if (code && code.trim()) {
-          setInventoryForm(prev => ({ ...prev, productCode: code.trim() }));
-          setScanMessage('✅ Код уншигдлаа: ' + code);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code && code.data && code.data.trim()) {
+          setInventoryForm(prev => ({ ...prev, productCode: code.data.trim() }));
+          setScanMessage('✅ Код уншигдлаа: ' + code.data);
           stopCameraScan();
         }
       }, 300);
@@ -235,12 +224,18 @@ function AdminPanel({ onLogout }) {
           const img = new Image();
           img.onload = async () => {
             try {
-              const zxingReader = new BrowserMultiFormatReader();
-              const result = await zxingReader.decodeFromImageElement(img);
-              const code = result ? result.getText().trim() : null;
-              if (code) {
-                setInventoryForm(prev => ({ ...prev, productCode: code }));
-                setScanMessage('✅ Код уншигдлаа: ' + code);
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              ctx.drawImage(img, 0, 0);
+              
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imageData.data, imageData.width, imageData.height);
+              
+              if (code && code.data) {
+                setInventoryForm(prev => ({ ...prev, productCode: code.data.trim() }));
+                setScanMessage('✅ Код уншигдлаа: ' + code.data);
               } else {
                 setScanMessage('Код олдсонгүй. Гараар бичнэ үү.');
               }
