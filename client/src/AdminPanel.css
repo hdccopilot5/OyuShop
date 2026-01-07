@@ -542,6 +542,70 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.scanner-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.scan-btn {
+  padding: 8px 12px;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.scan-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.scan-btn:hover:not(:disabled) {
+  background-color: #5568d3;
+  transform: translateY(-2px);
+}
+
+.scan-upload {
+  position: relative;
+  padding: 8px 12px;
+  background-color: #f1f5f9;
+  color: #333;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.scan-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.scanner-status {
+  margin-top: 6px;
+  color: #555;
+}
+
+.scanner-preview video {
+  width: 100%;
+  max-height: 200px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  display: none;
+}
+
+.scanner-preview .video-active {
+  display: block;
+}
+
 .inventory-form .submit-btn {
   padding: 10px 20px;
   background-color: #667eea;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './AdminPanel.css';
 import OrdersView from './OrdersView';
 
@@ -25,6 +25,12 @@ function AdminPanel({ onLogout }) {
   const [showInventory, setShowInventory] = useState(false);
   const [showOrders, setShowOrders] = useState(true);
   const [editingLogId, setEditingLogId] = useState(null);
+  const [barcodeSupport, setBarcodeSupport] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState('');
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const scanIntervalRef = useRef(null);
   const [inventoryForm, setInventoryForm] = useState({
     productCode: '',
     productName: '',
@@ -46,6 +52,15 @@ function AdminPanel({ onLogout }) {
       fetchInventoryLogs();
     }
   }, [showInventory]);
+
+  useEffect(() => {
+    if ('BarcodeDetector' in window) {
+      setBarcodeSupport(true);
+    }
+    return () => {
+      stopCameraScan();
+    };
+  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -125,6 +140,119 @@ function AdminPanel({ onLogout }) {
       images: prev.images.filter((_, i) => i !== index)
     }));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const stopCameraScan = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = videoRef.current.srcObject.getTracks();
+      tracks.forEach(t => t.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsScanning(false);
+  };
+
+  const decodeWithDetector = async (bitmap) => {
+    if (!barcodeSupport) return null;
+    try {
+      const detector = new window.BarcodeDetector({
+        formats: ['code_128', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code']
+      });
+      const codes = await detector.detect(bitmap);
+      if (codes && codes.length > 0) {
+        return codes[0].rawValue || null;
+      }
+    } catch (err) {
+      console.error('Barcode detect error:', err);
+    }
+    return null;
+  };
+
+  const startCameraScan = async () => {
+    if (!barcodeSupport) {
+      setScanMessage('Таны браузер BarcodeDetector дэмжихгүй байна. Зураг оруулах эсвэл гараар бичнэ үү.');
+      return;
+    }
+
+    try {
+      stopCameraScan();
+      setScanMessage('Камер асааж байна...');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setIsScanning(true);
+      setScanMessage('Код хайж байна...');
+
+      scanIntervalRef.current = setInterval(async () => {
+        if (!videoRef.current || !canvasRef.current) return;
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const bitmap = await createImageBitmap(canvas);
+        const code = await decodeWithDetector(bitmap);
+        bitmap.close && bitmap.close();
+        if (code) {
+          setInventoryForm(prev => ({ ...prev, productCode: code }));
+          setScanMessage('✅ Код уншигдлаа: ' + code);
+          stopCameraScan();
+        }
+      }, 600);
+    } catch (err) {
+      console.error('Camera scan error:', err);
+      setScanMessage('Камер асаахад алдаа гарлаа. Зураг оруулах эсвэл гараар бичнэ үү.');
+      stopCameraScan();
+    }
+  };
+
+  const handleImageUploadForCode = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!barcodeSupport) {
+      setScanMessage('Таны браузер зурагнаас код уншихыг дэмжихгүй байна.');
+      return;
+    }
+    setScanMessage('Зурагнаас код уншиж байна...');
+    try {
+      const imgURL = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          if (!canvasRef.current) return;
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          const bitmap = await createImageBitmap(canvas);
+          const code = await decodeWithDetector(bitmap);
+          bitmap.close && bitmap.close();
+          if (code) {
+            setInventoryForm(prev => ({ ...prev, productCode: code }));
+            setScanMessage('✅ Код уншигдлаа: ' + code);
+          } else {
+            setScanMessage('Код олдсонгүй. Гараар бичнэ үү.');
+          }
+        } finally {
+          URL.revokeObjectURL(imgURL);
+        }
+      };
+      img.onerror = () => {
+        setScanMessage('Зургийг уншиж чадсангүй.');
+        URL.revokeObjectURL(imgURL);
+      };
+      img.src = imgURL;
+    } catch (err) {
+      console.error('Image scan error:', err);
+      setScanMessage('Код уншихад алдаа гарлаа.');
+    }
   };
 
   const handleInventoryInputChange = (e) => {
@@ -678,6 +806,31 @@ function AdminPanel({ onLogout }) {
                     placeholder="ПР-001"
                     required
                   />
+                  <div className="scanner-actions">
+                    <button
+                      type="button"
+                      className="scan-btn"
+                      onClick={startCameraScan}
+                      disabled={isScanning && barcodeSupport}
+                    >
+                      📷 Камер унших
+                    </button>
+                    <label className="scan-upload">
+                      📁 Зурагнаас унших
+                      <input type="file" accept="image/*" onChange={handleImageUploadForCode} />
+                    </label>
+                  </div>
+                  <div className="scanner-status">
+                    {barcodeSupport ? (
+                      <small>{scanMessage || 'Камер эсвэл зураг оруулж код уншуулна'}</small>
+                    ) : (
+                      <small>Браузер BarcodeDetector дэмжихгүй байна. Кодыг гараар бичнэ үү.</small>
+                    )}
+                  </div>
+                  <div className="scanner-preview">
+                    <video ref={videoRef} className={isScanning ? 'video-active' : ''} muted playsInline></video>
+                    <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>Барааны нэр*</label>
