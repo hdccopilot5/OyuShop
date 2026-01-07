@@ -6,6 +6,39 @@ function OrdersView() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Огноо форматлах функц
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      // Хэрэв захиалга 1 минутаас бага хугацаанд ирсэн бол
+      if (diffMins < 1) {
+        return '🕐 Дөнгөж сая';
+      }
+      // 60 минутаас бага
+      if (diffMins < 60) {
+        return `🕐 ${diffMins} минутын өмнө`;
+      }
+      // 24 цагаас бага
+      if (diffHours < 24) {
+        return `🕐 ${diffHours} цагийн өмнө`;
+      }
+      // 7 хоногоос бага
+      if (diffDays < 7) {
+        return `📅 ${diffDays} өдрийн өмнө`;
+      }
+      // Бусад тохиолдолд
+      return `📅 ${date.toLocaleDateString('mn-MN')} ${date.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })}`;
+    } catch (e) {
+      return dateString;
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
     const interval = setInterval(fetchOrders, 3000);
@@ -101,7 +134,7 @@ function OrdersView() {
                     )}
                   </td>
                   <td className="price">{order.totalPrice}₮</td>
-                  <td className="date">{order.orderDate}</td>
+                  <td className="date">{formatDate(order.orderDate)}</td>
                   <td className="status">
                     <span className={`status-badge ${
                       order.status === 'Хүргэгдсэн' ? 'delivered' : 
@@ -174,7 +207,7 @@ function OrdersView() {
 
               <div className="detail-group">
                 <label>Захиалгын огноо:</label>
-                <p>{selectedOrder.orderDate}</p>
+                <p>{formatDate(selectedOrder.orderDate)}</p>
               </div>
             </div>
 
