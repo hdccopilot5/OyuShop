@@ -130,7 +130,8 @@ function OrdersView() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="ALL">🆕 Шинэ захиалга (бүгд)</option>
+            <option value="ALL">📋 Бүгд</option>
+            <option value="Шинэ захиалга">🆕 Зөвхөн шинэ</option>
             <option value="Хүлээгдэж байгаа">⏳ Хүлээгдэж байгаа</option>
             <option value="Хүргэгдсэн">✅ Хүргэгдсэн</option>
             <option value="Цуцалсан">❌ Цуцалсан</option>
