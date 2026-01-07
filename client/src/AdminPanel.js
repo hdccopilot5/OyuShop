@@ -20,6 +20,7 @@ function AdminPanel({ onLogout }) {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showProducts, setShowProducts] = useState(true);
 
   useEffect(() => {
     fetchProducts();
@@ -388,15 +389,25 @@ function AdminPanel({ onLogout }) {
               p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
               p.description.toLowerCase().includes(searchQuery.toLowerCase())
             ).length})</h2>
-            <input
-              type="text"
-              placeholder="🔍 Бараа хайх..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
+            <div className="products-header-actions">
+              <input
+                type="text"
+                placeholder="🔍 Бараа хайх..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+              <button 
+                type="button"
+                onClick={() => setShowProducts(!showProducts)} 
+                className="toggle-products-btn"
+              >
+                {showProducts ? '▲ Хаах' : '▼ Нээх'}
+              </button>
+            </div>
           </div>
 
+          {showProducts && (
           <div className="products-table-wrapper">
             <table className="products-table">
               <thead>
@@ -465,8 +476,9 @@ function AdminPanel({ onLogout }) {
               </tbody>
             </table>
           </div>
+          )}
 
-          {products.length === 0 && (
+          {products.length === 0 && showProducts && (
             <p className="no-products">Бараа байхгүй байна</p>
           )}
         </div>
