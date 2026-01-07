@@ -23,6 +23,7 @@ function AdminPanel({ onLogout }) {
   const [showProducts, setShowProducts] = useState(true);
   const [inventoryLogs, setInventoryLogs] = useState([]);
   const [showInventory, setShowInventory] = useState(false);
+  const [showOrders, setShowOrders] = useState(true);
   const [inventoryForm, setInventoryForm] = useState({
     productCode: '',
     productName: '',
@@ -586,7 +587,20 @@ function AdminPanel({ onLogout }) {
         </div>
       </div>
 
-      <OrdersView />
+      <div className="admin-section">
+        <div className="section-header">
+          <h2>📋 Хэрэглэгчийн захиалгууд</h2>
+          <button 
+            type="button"
+            onClick={() => setShowOrders(!showOrders)} 
+            className="toggle-orders-btn"
+          >
+            {showOrders ? '▲ Хаах' : '▼ Нээх'}
+          </button>
+        </div>
+        
+        {showOrders && <OrdersView />}
+      </div>
       
       <div className="admin-section">
         <div className="section-header">
