@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './UserCheckout.css';
 
-function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, onDecreaseQuantity }) {
+function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, onDecreaseQuantity, onRemoveFromCart }) {
   const [formData, setFormData] = useState({
     customerName: '',
     address: '',
@@ -155,6 +155,14 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
                 <div className="item-total">
                   {item.price * item.quantity}₮
                 </div>
+                <button 
+                  type="button"
+                  onClick={() => onRemoveFromCart(item._id)}
+                  className="remove-btn"
+                  title="Сагснаас хасах"
+                >
+                  🗑️
+                </button>
               </div>
             ))}
           </div>

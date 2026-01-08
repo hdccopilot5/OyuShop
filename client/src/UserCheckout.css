@@ -140,7 +140,7 @@
 .order-item {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   padding: 12px;
   border-bottom: 1px solid #eee;
   gap: 10px;
@@ -148,6 +148,11 @@
 
 .order-item:last-child {
   border-bottom: none;
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .item-info h4 {
@@ -166,6 +171,35 @@
   font-weight: 600;
   color: #667eea;
   white-space: nowrap;
+  min-width: 80px;
+  text-align: right;
+}
+
+.remove-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background-color: #fee;
+  color: #e74c3c;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.remove-btn:hover {
+  background-color: #e74c3c;
+  color: white;
+  transform: scale(1.1);
+}
+
+.remove-btn:active {
+  transform: scale(0.95);
 }
 
 .total-section {

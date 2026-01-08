@@ -249,6 +249,10 @@ function App() {
     );
   };
 
+  const removeFromCart = (productId) => {
+    setCartItems(prev => prev.filter(item => item._id !== productId));
+  };
+
   const handleCheckout = () => {
     if (cartItems.length === 0) {
       alert('Сагс хоос байна');
@@ -300,6 +304,7 @@ function App() {
             onBack={() => navigate('/')}
             onIncreaseQuantity={increaseQuantity}
             onDecreaseQuantity={decreaseQuantity}
+            onRemoveFromCart={removeFromCart}
           />
         }
       />
