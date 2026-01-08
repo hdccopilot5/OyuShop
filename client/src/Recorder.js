@@ -11,6 +11,7 @@ function Recorder({ onUploaded }) {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [useFileCapture, setUseFileCapture] = useState(false);
+  const [config, setConfig] = useState({ s3Enabled: false, s3PublicBaseUrl: '' });
 
   const pickSupportedMimeType = () => {
     if (typeof window === 'undefined' || !window.MediaRecorder) return null;
@@ -29,6 +30,14 @@ function Recorder({ onUploaded }) {
   const mimeType = pickSupportedMimeType();
 
   useEffect(() => {
+    // Load server config for upload strategy
+    (async () => {
+      try {
+        const res = await fetch('https://oyushop.onrender.com/api/config');
+        const data = await res.json();
+        setConfig({ s3Enabled: !!data.s3Enabled, s3PublicBaseUrl: data.s3PublicBaseUrl || '' });
+      } catch {}
+    })();
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       if (stream) {
@@ -94,16 +103,31 @@ function Recorder({ onUploaded }) {
     if (!blobToSend) return;
     setUploading(true);
     try {
-      const fd = new FormData();
       const ext = (mimeType && mimeType.includes('mp4')) ? 'mp4' : 'webm';
-      fd.append('video', blobToSend, `recording-${Date.now()}.${ext}`);
-      const res = await fetch('https://oyushop.onrender.com/api/upload/video', {
-        method: 'POST',
-        body: fd
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        onUploaded && onUploaded(data.url);
+      const filename = `recording-${Date.now()}.${ext}`;
+      if (config.s3Enabled) {
+        const pres = await fetch('https://oyushop.onrender.com/api/upload/video/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, contentType: mimeType || 'video/webm' })
+        });
+        const presData = await pres.json();
+        if (!presData.success) throw new Error('Presign failed');
+        const putRes = await fetch(presData.url, {
+          method: 'PUT',
+          headers: { 'Content-Type': mimeType || 'video/webm' },
+          body: blobToSend
+        });
+        if (!putRes.ok) throw new Error('S3 PUT failed');
+        onUploaded && onUploaded(presData.publicUrl);
+      } else {
+        const fd = new FormData();
+        fd.append('video', blobToSend, filename);
+        const res = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success && data.url) {
+          onUploaded && onUploaded(data.url);
+        }
       }
     } catch (e) {
       setError('Видео илгээхэд алдаа гарлаа');

@@ -4,6 +4,8 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -46,12 +48,48 @@ app.post('/api/upload/video', upload.single('video'), (req, res) => {
   res.json({ success: true, url: absoluteUrl });
 });
 
+// API: S3 presigned PUT URL авах (илүү найдвартай хадгалалт)
+app.post('/api/upload/video/presign', async (req, res) => {
+  if (!s3Client) {
+    return res.status(400).json({ success: false, message: 'S3 идэвхгүй байна' });
+  }
+  try {
+    const { filename, contentType } = req.body || {};
+    if (!filename || !contentType) {
+      return res.status(400).json({ success: false, message: 'filename ба contentType шаардлагатай' });
+    }
+    const safeName = String(filename).replace(/[^a-zA-Z0-9._-]/g, '_');
+    const key = `videos/${Date.now()}-${safeName}`;
+    const cmd = new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, ContentType: contentType });
+    const url = await getSignedUrl(s3Client, cmd, { expiresIn: 900 });
+    const publicUrl = S3_PUBLIC_BASE_URL ? `${S3_PUBLIC_BASE_URL}/${key}` : `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${key}`;
+    return res.json({ success: true, url, key, publicUrl });
+  } catch (e) {
+    console.log('S3 presign error:', e.message);
+    return res.status(500).json({ success: false, message: 'Presign алдаа' });
+  }
+});
+
 // Feature flags / Environment-based config
 const GPT5_ENABLED = String(process.env.GPT5_ENABLED ?? 'true').toLowerCase() === 'true';
+const S3_ENABLED = String(process.env.S3_ENABLED ?? 'false').toLowerCase() === 'true';
+const S3_BUCKET = process.env.S3_BUCKET || '';
+const S3_REGION = process.env.S3_REGION || '';
+const S3_PUBLIC_BASE_URL = process.env.S3_PUBLIC_BASE_URL || '';
+
+let s3Client = null;
+if (S3_ENABLED && S3_BUCKET && S3_REGION) {
+  try {
+    s3Client = new S3Client({ region: S3_REGION });
+    console.log('✅ S3 client configured');
+  } catch (e) {
+    console.log('⚠️ S3 configuration error:', e.message);
+  }
+}
 
 // Public config endpoint for clients
 app.get('/api/config', (req, res) => {
-  res.json({ gpt5Enabled: GPT5_ENABLED });
+  res.json({ gpt5Enabled: GPT5_ENABLED, s3Enabled: !!s3Client, s3PublicBaseUrl: S3_PUBLIC_BASE_URL });
 });
 
 // Админ наамтарт (environment variable-аас авна)
