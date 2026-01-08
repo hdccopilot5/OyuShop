@@ -10,6 +10,14 @@ services:
     envVars:
       - key: PORT
         value: 5000
+      - key: GPT5_ENABLED
+        value: true
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        value: 99752020
+      - key: MONGODB_URI
+        sync: false  # Set this in Render dashboard for security
   - type: web
     name: oyushop-frontend
     env: static
