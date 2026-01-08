@@ -5,10 +5,28 @@ function Recorder({ onUploaded }) {
   const mediaRecorderRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [chunks, setChunks] = useState([]);
+  const [fileBlob, setFileBlob] = useState(null);
   const [recording, setRecording] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [useFileCapture, setUseFileCapture] = useState(false);
+
+  const pickSupportedMimeType = () => {
+    if (typeof window === 'undefined' || !window.MediaRecorder) return null;
+    const candidates = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4;codecs=h264,aac',
+      'video/mp4',
+    ];
+    for (const t of candidates) {
+      try { if (MediaRecorder.isTypeSupported(t)) return t; } catch {}
+    }
+    return null;
+  };
+  const mimeType = pickSupportedMimeType();
 
   useEffect(() => {
     return () => {
@@ -22,31 +40,43 @@ function Recorder({ onUploaded }) {
   const startCamera = async () => {
     setError('');
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setUseFileCapture(true);
+        return;
+      }
+      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
       setStream(s);
       if (videoRef.current) {
         videoRef.current.srcObject = s;
         videoRef.current.play();
       }
+      if (!window.MediaRecorder || !mimeType) {
+        // iOS Safari older versions: fallback to file capture
+        setUseFileCapture(true);
+      }
     } catch (e) {
+      // If camera cannot open, use file capture fallback
+      setUseFileCapture(true);
       setError('Камер/микрофон нээхэд алдаа гарлаа');
     }
   };
 
   const startRecording = () => {
-    if (!stream) return;
-    const mr = new MediaRecorder(stream);
+    if (!stream || !window.MediaRecorder || !mimeType) return;
+    const mr = new MediaRecorder(stream, { mimeType });
     mediaRecorderRef.current = mr;
     setChunks([]);
+    setFileBlob(null);
     mr.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) {
         setChunks(prev => [...prev, e.data]);
       }
     };
     mr.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
+      const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
       const url = URL.createObjectURL(blob);
       setPreviewUrl(url);
+      setFileBlob(blob);
     };
     mr.start();
     setRecording(true);
@@ -60,12 +90,13 @@ function Recorder({ onUploaded }) {
   };
 
   const uploadVideo = async () => {
-    if (!chunks.length) return;
+    const blobToSend = fileBlob || (chunks.length ? new Blob(chunks, { type: mimeType || 'video/webm' }) : null);
+    if (!blobToSend) return;
     setUploading(true);
     try {
-      const blob = new Blob(chunks, { type: 'video/webm' });
       const fd = new FormData();
-      fd.append('video', blob, `recording-${Date.now()}.webm`);
+      const ext = (mimeType && mimeType.includes('mp4')) ? 'mp4' : 'webm';
+      fd.append('video', blobToSend, `recording-${Date.now()}.${ext}`);
       const res = await fetch('https://oyushop.onrender.com/api/upload/video', {
         method: 'POST',
         body: fd
@@ -81,23 +112,44 @@ function Recorder({ onUploaded }) {
     }
   };
 
+  const onFileSelected = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (!f.type.startsWith('video/')) {
+      setError('Видео файл сонгоно уу');
+      return;
+    }
+    setError('');
+    setFileBlob(f);
+    const url = URL.createObjectURL(f);
+    setPreviewUrl(url);
+  };
+
   return (
     <div className="recorder">
       <div className="recorder-row">
-        {!stream ? (
+        {!stream && !useFileCapture && (
           <button type="button" onClick={startCamera} className="recorder-btn">📷 Камер асаах</button>
-        ) : (
-          <video ref={videoRef} className="recorder-video" muted playsInline />
+        )}
+        {stream && !useFileCapture && (
+          <video ref={videoRef} className="recorder-video" muted playsInline autoPlay />
+        )}
+        {useFileCapture && (
+          <label className="recorder-btn">
+            📹 Видео сонгох/бичих
+            <input type="file" accept="video/*" capture="user" onChange={onFileSelected} style={{ display: 'none' }} />
+          </label>
         )}
         {error && <span className="recorder-error">{error}</span>}
       </div>
-      {stream && (
+      {(stream || useFileCapture) && (
         <div className="recorder-controls">
-          {!recording ? (
+          {!useFileCapture && !recording ? (
             <button type="button" onClick={startRecording} className="recorder-btn">⏺️ Бичлэг эхлүүлэх</button>
-          ) : (
+          ) : null}
+          {!useFileCapture && recording ? (
             <button type="button" onClick={stopRecording} className="recorder-btn stop">⏹️ Дуусгах</button>
-          )}
+          ) : null}
           {previewUrl && (
             <>
               <video src={previewUrl} controls className="recorder-preview" />

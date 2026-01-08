@@ -42,8 +42,8 @@ app.post('/api/upload/video', upload.single('video'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'Файл илгээгээгүй байна' });
   }
-  const url = `/uploads/${req.file.filename}`;
-  res.json({ success: true, url });
+  const absoluteUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  res.json({ success: true, url: absoluteUrl });
 });
 
 // Feature flags / Environment-based config
