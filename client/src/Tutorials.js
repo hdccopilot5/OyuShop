@@ -1,39 +1,297 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import './Tutorials.css';
 
-function Tutorials() {
-  const [items, setItems] = useState([]);
+function Tutorials({ isAdmin = false, onEdit = null }) {
+  const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [message, setMessage] = useState('');
+  const [config, setConfig] = useState({ cloudinaryEnabled: false });
+  const [formData, setFormData] = useState({
+    title: '',
+    description: ''
+  });
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoFileName, setVideoFileName] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch('https://oyushop.onrender.com/api/tutorials');
-        const data = await res.json();
-        setItems(Array.isArray(data) ? data : []);
-      } catch (e) {
-        setItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    fetchTutorials();
+    fetchConfig();
   }, []);
 
-  if (loading) return <div style={{padding: 20}}>Ачаалж байна...</div>;
+  const fetchConfig = async () => {
+    try {
+      const res = await fetch('https://oyushop.onrender.com/api/config');
+      const data = await res.json();
+      setConfig({ cloudinaryEnabled: !!data.cloudinaryEnabled });
+    } catch (err) {
+      console.error('Config алдаа:', err);
+    }
+  };
+
+  const fetchTutorials = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('https://oyushop.onrender.com/api/tutorials');
+      const data = await res.json();
+      setTutorials(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Заавар уншиж чадсангүй:', err);
+      setTutorials([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      setMessage('❌ Видео файл сонгоно уу');
+      return;
+    }
+
+    setVideoFile(file);
+    setVideoFileName(file.name);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.title.trim() || !videoFile) {
+      setMessage('❌ Гарчиг болон видео файл шаардлагатай');
+      return;
+    }
+
+    try {
+      let videoUrl = '';
+
+      if (config.cloudinaryEnabled && window.cloudinary && window.cloudinary.openUploadWidget) {
+        // Cloudinary widget ашигла
+        const widget = window.cloudinary.openUploadWidget(
+          {
+            cloudName: 'dbpzliwb',
+            uploadPreset: 'unsigned_preset',
+            resourceType: 'video',
+            multiple: false,
+            cropping: false,
+            folder: 'tutorials'
+          },
+          (error, result) => {
+            if (result && result.event === 'success') {
+              videoUrl = result.info.secure_url;
+              saveTutorialToServer(videoUrl);
+            } else if (error) {
+              setMessage('❌ Видео илгээхэд алдаа');
+            }
+          }
+        );
+        // Widget нээх
+        if (widget && widget.open) {
+          widget.open();
+        }
+      } else {
+        // Fallback: Server хэмжээ upload
+        const fd = new FormData();
+        fd.append('video', videoFile);
+
+        const uploadRes = await fetch('https://oyushop.onrender.com/api/upload/video', {
+          method: 'POST',
+          body: fd
+        });
+
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) {
+          setMessage('❌ Видео илгээхэд алдаа');
+          return;
+        }
+
+        videoUrl = uploadData.url;
+        saveTutorialToServer(videoUrl);
+      }
+    } catch (err) {
+      console.error('Upload алдаа:', err);
+      setMessage('❌ Видео илгээхэд алдаа гарлаа');
+    }
+  };
+
+  const saveTutorialToServer = async (videoUrl) => {
+    try {
+      const res = await fetch('https://oyushop.onrender.com/api/tutorials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          videoUrl
+        })
+      });
+
+      const data = await res.json();
+      if (data.success || data.tutorial) {
+        setMessage('✅ Заавар бичлэг нэмэгдлээ');
+        setFormData({ title: '', description: '' });
+        setVideoFile(null);
+        setVideoFileName('');
+        setShowForm(false);
+        fetchTutorials();
+      } else {
+        setMessage('❌ ' + (data.message || 'Алдаа'));
+      }
+    } catch (err) {
+      console.error('Save алдаа:', err);
+      setMessage('❌ Алдаа гарлаа');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Энэ бичлэгийг устгах уу?')) return;
+
+    try {
+      const res = await fetch(`https://oyushop.onrender.com/api/tutorials/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        setMessage('✅ Устгагдлаа');
+        fetchTutorials();
+      } else {
+        setMessage('❌ Устгалт амжилтгүй');
+      }
+    } catch (err) {
+      console.error('Delete алдаа:', err);
+      setMessage('❌ Алдаа гарлаа');
+    }
+  };
 
   return (
-    <div style={{maxWidth: 1000, margin: '0 auto', padding: 20}}>
-      <h2>🎬 Заавар бичлэг</h2>
-      {items.length === 0 ? (
-        <p>Одоогоор заавар бичлэг байхгүй байна.</p>
+    <div className="tutorials-container">
+      {isAdmin && (
+        <div className="tutorial-form-section">
+          <div className="tutorial-form-header">
+            <h2>📹 Заавар бичлэг нэмэх</h2>
+            <button
+              type="button"
+              onClick={() => setShowForm(!showForm)}
+              className="toggle-form-btn"
+            >
+              {showForm ? '▲ Хаах' : '▼ Нээх'}
+            </button>
+          </div>
+
+          {message && (
+            <div className={`message ${message.includes('✅') ? 'success' : 'error'}`}>
+              {message}
+            </div>
+          )}
+
+          {showForm && (
+            <form onSubmit={handleSubmit} className="tutorial-form">
+              <div className="form-group">
+                <label>Гарчиг *</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  placeholder="Жишээ нь: Хүүхдийн нөөрдөгийг хэрхэн ашиглах"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Тайлбар</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Заавар бичлэгийн дэлгэрэнгүй тайлбар"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Видео файл *</label>
+                <label className="file-input-label">
+                  📹 Видео сонгох
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={handleVideoChange}
+                    required
+                  />
+                </label>
+                {videoFileName && (
+                  <div className="file-name">✓ Сонгосон: {videoFileName}</div>
+                )}
+              </div>
+
+              <div className="form-buttons">
+                <button type="submit" className="submit-btn">
+                  ⬆️ Илгээх
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setFormData({ title: '', description: '' });
+                    setVideoFile(null);
+                    setVideoFileName('');
+                  }}
+                  className="cancel-btn"
+                >
+                  ✕ Цуцлах
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
+      <div className="tutorials-header">
+        <h1>📚 Заавар бичлэгүүд</h1>
+      </div>
+
+      {loading ? (
+        <div className="loading-tutorials">
+          <p>Заавар уншиж байна...</p>
+        </div>
+      ) : tutorials.length === 0 ? (
+        <div className="no-tutorials">
+          <p>Заавар бичлэг байхгүй</p>
+        </div>
       ) : (
-        <div style={{display: 'grid', gridTemplateColumns: '1fr', gap: 16}}>
-          {items.map((t) => (
-            <div key={t._id} style={{background: '#fff', borderRadius: 12, padding: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.08)'}}>
-              <h3 style={{margin: '0 0 8px'}}>{t.title}</h3>
-              {t.description && <p style={{marginTop: 0, color: '#555'}}>{t.description}</p>}
-              <video src={t.videoUrl} controls style={{width: '100%', borderRadius: 8, background: '#000'}} />
-              <small style={{color: '#777'}}>Нэмэгдсэн: {new Date(t.createdAt).toLocaleString('mn-MN')}</small>
+        <div className="tutorials-grid">
+          {tutorials.map(tutorial => (
+            <div key={tutorial._id} className="tutorial-card">
+              <div className="tutorial-video-wrapper">
+                <video controls>
+                  <source src={tutorial.videoUrl} type="video/mp4" />
+                  Таны браузер видео ойлгодоггүй
+                </video>
+              </div>
+              <div className="tutorial-info">
+                <h3>{tutorial.title}</h3>
+                {tutorial.description && <p>{tutorial.description}</p>}
+                <div className="tutorial-date">
+                  {tutorial.createdAt
+                    ? new Date(tutorial.createdAt).toLocaleDateString('mn-MN')
+                    : ''}
+                </div>
+                {isAdmin && (
+                  <button
+                    onClick={() => handleDelete(tutorial._id)}
+                    className="tutorial-delete-btn"
+                  >
+                    🗑️ Устгах
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

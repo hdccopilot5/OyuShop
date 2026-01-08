@@ -1,0 +1,275 @@
+.tutorials-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.tutorials-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #ffc0cb;
+  padding-bottom: 15px;
+}
+
+.tutorials-header h1 {
+  margin: 0;
+  color: #d946a6;
+  font-size: 28px;
+}
+
+.tutorials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.tutorial-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tutorial-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(217, 70, 166, 0.2);
+}
+
+.tutorial-video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  background: #f0f0f0;
+}
+
+.tutorial-video-wrapper video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tutorial-info {
+  padding: 15px;
+}
+
+.tutorial-info h3 {
+  margin: 0 0 10px 0;
+  color: #d946a6;
+  font-size: 18px;
+}
+
+.tutorial-info p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.tutorial-date {
+  font-size: 12px;
+  color: #999;
+  margin-top: 10px;
+}
+
+.no-tutorials {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.no-tutorials p {
+  font-size: 18px;
+  margin: 0;
+}
+
+.loading-tutorials {
+  text-align: center;
+  padding: 40px;
+  color: #d946a6;
+}
+
+.tutorial-form-section {
+  background: #fff9fc;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  border: 1px solid #ffc0cb;
+}
+
+.tutorial-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #d946a6;
+  padding-bottom: 10px;
+}
+
+.tutorial-form-header h2 {
+  margin: 0;
+  color: #d946a6;
+  font-size: 20px;
+}
+
+.toggle-form-btn {
+  background: #d946a6;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.toggle-form-btn:hover {
+  background: #c0358f;
+}
+
+.tutorial-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #d946a6;
+  box-shadow: 0 0 0 3px rgba(217, 70, 166, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.file-input-label {
+  display: inline-block;
+  background: #d946a6;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.file-input-label:hover {
+  background: #c0358f;
+}
+
+.file-input-label input {
+  display: none;
+}
+
+.file-name {
+  margin-top: 5px;
+  font-size: 13px;
+  color: #666;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.submit-btn {
+  background: #d946a6;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  flex: 1;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #c0358f;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background: #e0e0e0;
+  color: #333;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background: #d0d0d0;
+}
+
+.message {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.message.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.tutorial-delete-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.tutorial-delete-btn:hover {
+  background: #cc0000;
+}

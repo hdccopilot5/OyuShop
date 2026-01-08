@@ -11,7 +11,7 @@ function Recorder({ onUploaded }) {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [useFileCapture, setUseFileCapture] = useState(false);
-  const [config, setConfig] = useState({ s3Enabled: false, s3PublicBaseUrl: '' });
+  const [config, setConfig] = useState({ cloudinaryEnabled: false });
 
   const pickSupportedMimeType = () => {
     if (typeof window === 'undefined' || !window.MediaRecorder) return null;
@@ -35,7 +35,7 @@ function Recorder({ onUploaded }) {
       try {
         const res = await fetch('https://oyushop.onrender.com/api/config');
         const data = await res.json();
-        setConfig({ s3Enabled: !!data.s3Enabled, s3PublicBaseUrl: data.s3PublicBaseUrl || '' });
+        setConfig({ cloudinaryEnabled: !!data.cloudinaryEnabled });
       } catch {}
     })();
     return () => {
@@ -105,21 +105,40 @@ function Recorder({ onUploaded }) {
     try {
       const ext = (mimeType && mimeType.includes('mp4')) ? 'mp4' : 'webm';
       const filename = `recording-${Date.now()}.${ext}`;
-      if (config.s3Enabled) {
-        const pres = await fetch('https://oyushop.onrender.com/api/upload/video/presign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename, contentType: mimeType || 'video/webm' })
-        });
-        const presData = await pres.json();
-        if (!presData.success) throw new Error('Presign failed');
-        const putRes = await fetch(presData.url, {
-          method: 'PUT',
-          headers: { 'Content-Type': mimeType || 'video/webm' },
-          body: blobToSend
-        });
-        if (!putRes.ok) throw new Error('S3 PUT failed');
-        onUploaded && onUploaded(presData.publicUrl);
+      if (config.cloudinaryEnabled) {
+        // Use Cloudinary widget for upload
+        if (window.cloudinary && window.cloudinary.openUploadWidget) {
+          window.cloudinary.openUploadWidget(
+            {
+              cloudName: 'dbpzliwb',
+              uploadPreset: 'unsigned_preset',
+              resourceType: 'video',
+              multiple: false,
+              cropping: false
+            },
+            (error, result) => {
+              if (!error && result && result.event === 'success') {
+                onUploaded && onUploaded(result.info.secure_url);
+                setUploading(false);
+              } else if (error) {
+                setError('Видео илгээхэд алдаа гарлаа');
+                setUploading(false);
+              }
+            }
+          );
+        } else {
+          // Fallback: direct upload to Cloudinary via server
+          const fd = new FormData();
+          fd.append('video', blobToSend, filename);
+          const res = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (data.success && data.url) {
+            onUploaded && onUploaded(data.url);
+          } else {
+            setError('Видео илгээхэд алдаа гарлаа');
+          }
+          setUploading(false);
+        }
       } else {
         const fd = new FormData();
         fd.append('video', blobToSend, filename);
@@ -127,11 +146,13 @@ function Recorder({ onUploaded }) {
         const data = await res.json();
         if (data.success && data.url) {
           onUploaded && onUploaded(data.url);
+        } else {
+          setError('Видео илгээхэд алдаа гарлаа');
         }
+        setUploading(false);
       }
     } catch (e) {
       setError('Видео илгээхэд алдаа гарлаа');
-    } finally {
       setUploading(false);
     }
   };

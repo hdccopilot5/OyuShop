@@ -16,20 +16,14 @@ services:
         value: admin
       - key: ADMIN_PASSWORD
         value: 99752020
-      - key: S3_ENABLED
-        value: false
-      - key: S3_BUCKET
-        sync: false
-      - key: S3_REGION
-        sync: false
-      - key: S3_PUBLIC_BASE_URL
-        sync: false
-      - key: GPT5_ENABLED
+      - key: CLOUDINARY_ENABLED
         value: true
-      - key: ADMIN_USERNAME
-        value: admin
-      - key: ADMIN_PASSWORD
-        value: 99752020
+      - key: CLOUDINARY_NAME
+        value: dbpzliwb
+      - key: CLOUDINARY_API_KEY
+        value: 8371393443584496
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: MONGODB_URI
         sync: false  # Set this in Render dashboard for security
   - type: web

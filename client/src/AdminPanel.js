@@ -49,7 +49,7 @@ function AdminPanel({ onLogout }) {
   const [tutorials, setTutorials] = useState([]);
   const [tutorialForm, setTutorialForm] = useState({ title: '', description: '' });
   const [tutorialVideoFile, setTutorialVideoFile] = useState(null);
-  const [config, setConfig] = useState({ s3Enabled: false, s3PublicBaseUrl: '' });
+  const [config, setConfig] = useState({ cloudinaryEnabled: false });
 
   useEffect(() => {
     fetchProducts();
@@ -66,7 +66,7 @@ function AdminPanel({ onLogout }) {
       try {
         const res = await fetch('https://oyushop.onrender.com/api/config');
         const data = await res.json();
-        setConfig({ s3Enabled: !!data.s3Enabled, s3PublicBaseUrl: data.s3PublicBaseUrl || '' });
+        setConfig({ cloudinaryEnabled: !!data.cloudinaryEnabled });
       } catch {}
     })();
   }, []);
@@ -563,22 +563,36 @@ function AdminPanel({ onLogout }) {
     }
     try {
       let videoUrl = '';
-      if (config.s3Enabled) {
-        const filename = `tutorial-${Date.now()}-${tutorialVideoFile.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
-        const pres = await fetch('https://oyushop.onrender.com/api/upload/video/presign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename, contentType: tutorialVideoFile.type || 'video/mp4' })
-        });
-        const presData = await pres.json();
-        if (!presData.success) throw new Error('presign failed');
-        const putRes = await fetch(presData.url, {
-          method: 'PUT',
-          headers: { 'Content-Type': tutorialVideoFile.type || 'video/mp4' },
-          body: tutorialVideoFile
-        });
-        if (!putRes.ok) throw new Error('S3 PUT failed');
-        videoUrl = presData.publicUrl;
+      if (config.cloudinaryEnabled) {
+        // Use Cloudinary upload widget
+        if (window.cloudinary && window.cloudinary.openUploadWidget) {
+          window.cloudinary.openUploadWidget(
+            {
+              cloudName: 'dbpzliwb',
+              uploadPreset: 'unsigned_preset',
+              resourceType: 'video',
+              multiple: false,
+              cropping: false
+            },
+            (error, result) => {
+              if (!error && result && result.event === 'success') {
+                videoUrl = result.info.secure_url;
+                saveTutorialToServer(videoUrl);
+              } else if (error) {
+                setMessage('❌ Видео илгээхэд алдаа');
+              }
+            }
+          );
+        } else {
+          // Fallback: server upload
+          const fd = new FormData();
+          fd.append('video', tutorialVideoFile);
+          const up = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
+          const upData = await up.json();
+          if (!upData.success) throw new Error('upload failed');
+          videoUrl = upData.url;
+          saveTutorialToServer(videoUrl);
+        }
       } else {
         const fd = new FormData();
         fd.append('video', tutorialVideoFile);
@@ -586,8 +600,15 @@ function AdminPanel({ onLogout }) {
         const upData = await up.json();
         if (!upData.success) throw new Error('upload failed');
         videoUrl = upData.url;
+        saveTutorialToServer(videoUrl);
       }
+    } catch (err) {
+      setMessage('❌ Алдаа гарлаа');
+    }
+  };
 
+  const saveTutorialToServer = async (videoUrl) => {
+    try {
       const res = await fetch('https://oyushop.onrender.com/api/tutorials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -4,8 +4,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -50,46 +49,47 @@ app.post('/api/upload/video', upload.single('video'), (req, res) => {
 
 // API: S3 presigned PUT URL авах (илүү найдвартай хадгалалт)
 app.post('/api/upload/video/presign', async (req, res) => {
-  if (!s3Client) {
-    return res.status(400).json({ success: false, message: 'S3 идэвхгүй байна' });
+  if (!CLOUDINARY_ENABLED) {
+    return res.status(400).json({ success: false, message: 'Cloudinary идэвхгүй байна' });
   }
   try {
     const { filename, contentType } = req.body || {};
-    if (!filename || !contentType) {
-      return res.status(400).json({ success: false, message: 'filename ба contentType шаардлагатай' });
+    if (!filename) {
+      return res.status(400).json({ success: false, message: 'filename шаардлагатай' });
     }
-    const safeName = String(filename).replace(/[^a-zA-Z0-9._-]/g, '_');
-    const key = `videos/${Date.now()}-${safeName}`;
-    const cmd = new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, ContentType: contentType });
-    const url = await getSignedUrl(s3Client, cmd, { expiresIn: 900 });
-    const publicUrl = S3_PUBLIC_BASE_URL ? `${S3_PUBLIC_BASE_URL}/${key}` : `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${key}`;
-    return res.json({ success: true, url, key, publicUrl });
+    // Return Cloudinary upload widget config instead of presigned URL
+    const timestamp = Math.floor(Date.now() / 1000);
+    const publicId = `videos/${Date.now()}-${String(filename).replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    
+    res.json({ 
+      success: true, 
+      cloudinary: true,
+      cloudName: cloudinary.config().cloud_name,
+      publicId
+    });
   } catch (e) {
-    console.log('S3 presign error:', e.message);
-    return res.status(500).json({ success: false, message: 'Presign алдаа' });
+    console.log('Cloudinary presign error:', e.message);
+    return res.status(500).json({ success: false, message: 'Upload алдаа' });
   }
 });
 
 // Feature flags / Environment-based config
 const GPT5_ENABLED = String(process.env.GPT5_ENABLED ?? 'true').toLowerCase() === 'true';
-const S3_ENABLED = String(process.env.S3_ENABLED ?? 'false').toLowerCase() === 'true';
-const S3_BUCKET = process.env.S3_BUCKET || '';
-const S3_REGION = process.env.S3_REGION || '';
-const S3_PUBLIC_BASE_URL = process.env.S3_PUBLIC_BASE_URL || '';
+const CLOUDINARY_ENABLED = String(process.env.CLOUDINARY_ENABLED ?? 'true').toLowerCase() === 'true';
 
-let s3Client = null;
-if (S3_ENABLED && S3_BUCKET && S3_REGION) {
-  try {
-    s3Client = new S3Client({ region: S3_REGION });
-    console.log('✅ S3 client configured');
-  } catch (e) {
-    console.log('⚠️ S3 configuration error:', e.message);
-  }
+// Cloudinary config
+if (CLOUDINARY_ENABLED) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_NAME || 'dbpzliwb',
+    api_key: process.env.CLOUDINARY_API_KEY || '8371393443584496',
+    api_secret: process.env.CLOUDINARY_API_SECRET || '8fq62pCidXd_uS93YKLQA3LooHc'
+  });
+  console.log('✅ Cloudinary сонгогдлоо');
 }
 
 // Public config endpoint for clients
 app.get('/api/config', (req, res) => {
-  res.json({ gpt5Enabled: GPT5_ENABLED, s3Enabled: !!s3Client, s3PublicBaseUrl: S3_PUBLIC_BASE_URL });
+  res.json({ gpt5Enabled: GPT5_ENABLED, cloudinaryEnabled: CLOUDINARY_ENABLED });
 });
 
 // Админ наамтарт (environment variable-аас авна)
@@ -746,7 +746,7 @@ mongoose
   });
 
 // Сервер асаах
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Сервер ${PORT} портоор асав`);
   console.log(`👨‍💼 Админ нэвтрэх: username=${ADMIN_CREDENTIALS.username}`);
