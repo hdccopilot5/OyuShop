@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, Link } from "react
 import AdminLogin from "./AdminLogin";
 import AdminPanel from "./AdminPanel";
 import UserCheckout from "./UserCheckout";
+import Tutorials from "./Tutorials";
 
 // Shop page component
 function ShopPage({ 
@@ -91,6 +92,7 @@ function ShopPage({
           </select>
 
           <div className="header-buttons">
+            <Link to="/tutorials" className="checkout-btn" style={{textDecoration: 'none'}}>🎬 Заавар</Link>
             <button 
               onClick={handleCheckout}
               className={`checkout-btn ${cartItems.length === 0 ? 'disabled' : ''}`}
@@ -308,6 +310,7 @@ function App() {
           />
         }
       />
+      <Route path="/tutorials" element={<Tutorials />} />
     </Routes>
   );
 }

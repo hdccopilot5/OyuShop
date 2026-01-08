@@ -44,6 +44,12 @@ function AdminPanel({ onLogout }) {
     otherCost: ''
   });
 
+  // Tutorials state
+  const [showTutorials, setShowTutorials] = useState(false);
+  const [tutorials, setTutorials] = useState([]);
+  const [tutorialForm, setTutorialForm] = useState({ title: '', description: '' });
+  const [tutorialVideoFile, setTutorialVideoFile] = useState(null);
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -53,6 +59,12 @@ function AdminPanel({ onLogout }) {
       fetchInventoryLogs();
     }
   }, [showInventory]);
+
+  useEffect(() => {
+    if (showTutorials) {
+      fetchTutorials();
+    }
+  }, [showTutorials]);
 
   useEffect(() => {
     setBarcodeSupport(true);
@@ -78,6 +90,16 @@ function AdminPanel({ onLogout }) {
       setInventoryLogs(data);
     } catch (err) {
       console.error('Алдаа:', err);
+    }
+  };
+
+  const fetchTutorials = async () => {
+    try {
+      const res = await fetch('https://oyushop.onrender.com/api/tutorials');
+      const data = await res.json();
+      setTutorials(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setTutorials([]);
     }
   };
 
@@ -509,6 +531,62 @@ function AdminPanel({ onLogout }) {
     setEditingId(null);
     setImagePreview('');
     setImagePreviews([]);
+  };
+
+  // Tutorials handlers
+  const handleTutorialInput = (e) => {
+    const { name, value } = e.target;
+    setTutorialForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleTutorialFile = (e) => {
+    const f = e.target.files && e.target.files[0];
+    setTutorialVideoFile(f || null);
+  };
+
+  const handleCreateTutorial = async (e) => {
+    e.preventDefault();
+    if (!tutorialForm.title || !tutorialVideoFile) {
+      setMessage('❌ Гарчиг болон видео шаардлагатай');
+      return;
+    }
+    try {
+      const fd = new FormData();
+      fd.append('video', tutorialVideoFile);
+      const up = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
+      const upData = await up.json();
+      if (!upData.success) throw new Error('upload failed');
+
+      const res = await fetch('https://oyushop.onrender.com/api/tutorials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: tutorialForm.title, description: tutorialForm.description, videoUrl: upData.url })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage('✅ Заавар бичлэг нэмэгдлээ');
+        setTutorialForm({ title: '', description: '' });
+        setTutorialVideoFile(null);
+        fetchTutorials();
+      } else {
+        setMessage('❌ ' + (data.message || 'Алдаа'));
+      }
+    } catch (err) {
+      setMessage('❌ Алдаа гарлаа');
+    }
+  };
+
+  const handleDeleteTutorial = async (id) => {
+    if (!window.confirm('Энэ бичлэгийг устгах уу?')) return;
+    try {
+      const res = await fetch(`https://oyushop.onrender.com/api/tutorials/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setMessage('✅ Устгагдлаа');
+        fetchTutorials();
+      }
+    } catch (e) {
+      setMessage('❌ Алдаа гарлаа');
+    }
   };
 
   return (
@@ -1009,6 +1087,77 @@ function AdminPanel({ onLogout }) {
                           </tr>
                         );
                       })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="admin-section">
+        <div className="section-header">
+          <h2>🎬 Заавар бичлэг</h2>
+          <button 
+            type="button"
+            onClick={() => setShowTutorials(!showTutorials)} 
+            className="toggle-inventory-btn"
+          >
+            {showTutorials ? '▲ Хаах' : '▼ Нээх'}
+          </button>
+        </div>
+
+        {showTutorials && (
+          <>
+            <form onSubmit={handleCreateTutorial} className="inventory-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Гарчиг *</label>
+                  <input type="text" name="title" value={tutorialForm.title} onChange={handleTutorialInput} placeholder="Жишээ: Хүргэлтийн заавар" required />
+                </div>
+                <div className="form-group">
+                  <label>Видео файл *</label>
+                  <input type="file" accept="video/*" onChange={handleTutorialFile} required />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Тайлбар</label>
+                <textarea name="description" value={tutorialForm.description} onChange={handleTutorialInput} placeholder="Богино тайлбар..." rows="2" />
+              </div>
+              <button type="submit" className="submit-btn">Нэмэх</button>
+            </form>
+
+            <div className="inventory-report">
+              <div className="report-header">
+                <h3>📜 Нийт бичлэгүүд</h3>
+              </div>
+              {tutorials.length === 0 ? (
+                <p className="no-data">Бичлэг байхгүй байна</p>
+              ) : (
+                <div className="inventory-table-wrapper">
+                  <table className="inventory-table">
+                    <thead>
+                      <tr>
+                        <th>Гарчиг</th>
+                        <th>Огноо</th>
+                        <th>Үйлдэл</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tutorials.map(t => (
+                        <tr key={t._id}>
+                          <td>
+                            <strong>{t.title}</strong>
+                            {t.description && (<><br/><small>{t.description}</small></>)}
+                          </td>
+                          <td>{new Date(t.createdAt).toLocaleString('mn-MN')}</td>
+                          <td>
+                            <a href={t.videoUrl} target="_blank" rel="noreferrer" className="edit-btn" title="Үзэх">▶️</a>
+                            <button onClick={() => handleDeleteTutorial(t._id)} className="delete-btn" title="Устгах">🗑️</button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>

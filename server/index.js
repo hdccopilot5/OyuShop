@@ -108,6 +108,16 @@ const InventoryLogSchema = new mongoose.Schema({
 
 const InventoryLog = mongoose.model('InventoryLog', InventoryLogSchema);
 
+// Заавар бичлэгийн загвар
+const TutorialSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  videoUrl: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Tutorial = mongoose.model('Tutorial', TutorialSchema);
+
 // Mock өгөгдөл
 const mockProducts = [
   {
@@ -185,6 +195,11 @@ let orders = [
     orderDate: new Date(),
     status: 'Шинэ захиалга'
   }
+];
+
+// Заавар бичлэгүүд (mock fallback)
+let tutorialMocks = [
+  // { _id: 't1', title: 'Жишээ заавар', description: 'Хүргэлтийн заавар', videoUrl: 'https://example.com/video.mp4', createdAt: new Date() }
 ];
 
 // API: Хүүхдийн болон төрсөн эхийн барааны жагсаалт
@@ -697,4 +712,57 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Сервер ${PORT} портоор асав`);
   console.log(`👨‍💼 Админ нэвтрэх: username=${ADMIN_CREDENTIALS.username}`);
+});
+
+// API: Заавар бичлэгүүд
+// Бүх заавар бичлэгүүд авах (public)
+app.get('/api/tutorials', async (req, res) => {
+  if (isMongoConnected) {
+    try {
+      const items = await Tutorial.find().sort({ createdAt: -1 });
+      return res.json(items);
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+    }
+  }
+  res.json(tutorialMocks.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)));
+});
+
+// Шинэ заавар бичлэг нэмэх (админ UI-с дуудагдана)
+app.post('/api/tutorials', async (req, res) => {
+  const { title, description, videoUrl } = req.body;
+  if (!title || !videoUrl) {
+    return res.status(400).json({ success: false, message: 'Гарчиг ба видео холбоос шаардлагатай' });
+  }
+  if (isMongoConnected) {
+    try {
+      const doc = new Tutorial({ title, description, videoUrl });
+      await doc.save();
+      return res.json({ success: true, tutorial: doc });
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+      return res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
+    }
+  }
+  const mock = { _id: Date.now().toString(), title, description: description || '', videoUrl, createdAt: new Date() };
+  tutorialMocks.push(mock);
+  res.json({ success: true, tutorial: mock });
+});
+
+// Заавар бичлэг устгах
+app.delete('/api/tutorials/:id', async (req, res) => {
+  if (isMongoConnected) {
+    try {
+      const result = await Tutorial.findByIdAndDelete(req.params.id);
+      if (result) return res.json({ success: true });
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+    }
+  }
+  const idx = tutorialMocks.findIndex(t => t._id === req.params.id);
+  if (idx !== -1) {
+    tutorialMocks.splice(idx, 1);
+    return res.json({ success: true });
+  }
+  res.status(404).json({ success: false, message: 'Олдсонгүй' });
 });
