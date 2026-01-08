@@ -1,11 +1,50 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cors());
+
+// Serve uploaded files statically
+const uploadDir = path.join(__dirname, 'uploads');
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+  }
+} catch {}
+app.use('/uploads', express.static(uploadDir));
+
+// Multer storage for video uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, `${Date.now()}-${safeName}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (req, file, cb) => {
+    if ((file.mimetype || '').startsWith('video/')) cb(null, true);
+    else cb(new Error('Зөвхөн видео файл байж болно'));
+  }
+});
+
+// API: Видео файл хуулж авах
+app.post('/api/upload/video', upload.single('video'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'Файл илгээгээгүй байна' });
+  }
+  const url = `/uploads/${req.file.filename}`;
+  res.json({ success: true, url });
+});
 
 // Feature flags / Environment-based config
 const GPT5_ENABLED = String(process.env.GPT5_ENABLED ?? 'true').toLowerCase() === 'true';
@@ -48,7 +87,8 @@ const OrderSchema = new mongoose.Schema({
   }],
   totalPrice: Number,
   orderDate: { type: Date, default: Date.now },
-  status: { type: String, default: 'Шинэ захиалга' }
+  status: { type: String, default: 'Шинэ захиалга' },
+  videoUrl: String
 });
 
 const Order = mongoose.model('Order', OrderSchema);
@@ -137,6 +177,7 @@ let orders = [
     address: 'Улаанбаатар хот, Сүхбаатар дүүрэг',
     phone: '99111159',
     notes: '',
+    videoUrl: '',
     products: [
       { _id: '1', name: 'Хүүхдийн нөөрдөг', price: 25000, quantity: 1, description: 'Дулаан, тав тухтай нөөрдөг' }
     ],
@@ -254,7 +295,7 @@ app.post('/api/admin/login', (req, res) => {
 
 // API: Захиалга үүсгэх
 app.post('/api/orders', async (req, res) => {
-  const { customerName, address, phone, notes, products } = req.body;
+  const { customerName, address, phone, notes, products, videoUrl } = req.body;
   
   if (!customerName || !address || !phone || !products || products.length === 0) {
     return res.status(400).json({ 
@@ -269,6 +310,7 @@ app.post('/api/orders', async (req, res) => {
     phone,
     notes,
     products,
+    videoUrl: videoUrl || '',
     totalPrice: products.reduce((sum, p) => sum + (p.price * p.quantity), 0),
     orderDate: new Date(),
     status: 'Шинэ захиалга'

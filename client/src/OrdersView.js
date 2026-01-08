@@ -243,6 +243,13 @@ function OrdersView() {
                 <p>{selectedOrder.notes || '(Мэдээлэл байхгүй)'}</p>
               </div>
 
+              {selectedOrder.videoUrl && (
+                <div className="detail-group">
+                  <label>🎬 Видео тайлбар:</label>
+                  <video src={selectedOrder.videoUrl} controls className="order-video" />
+                </div>
+              )}
+
               <div className="detail-group">
                 <label>Захиалгын огноо:</label>
                 <p>{formatDateWithAbsolute(selectedOrder.orderDate)}</p>

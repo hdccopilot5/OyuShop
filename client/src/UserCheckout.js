@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './UserCheckout.css';
+import Recorder from './Recorder';
 
 function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, onDecreaseQuantity, onRemoveFromCart }) {
   const [formData, setFormData] = useState({
@@ -8,6 +9,7 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
     notes: '',
     phone: ''
   });
+  const [videoUrl, setVideoUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,7 +42,8 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          products: cartItems
+          products: cartItems,
+          videoUrl
         })
       });
 
@@ -123,6 +126,15 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
               {loading ? 'Илгээж байна...' : '✅ Захиалга баталгаажуулах'}
             </button>
           </form>
+
+          <div className="recorder-section">
+            <h3>🎬 Видео тайлбар (сонголттой)</h3>
+            <p className="recorder-hint">Хүргэлтийн дэлгэрэнгүй эсвэл нэмэлт тайлбараа видео хэлбэрээр үлдээж болно.</p>
+            <Recorder onUploaded={(url) => setVideoUrl(url)} />
+            {videoUrl && (
+              <p className="recorder-success">✅ Видео хавсаргалаа: {videoUrl}</p>
+            )}
+          </div>
         </div>
 
         <div className="order-summary">

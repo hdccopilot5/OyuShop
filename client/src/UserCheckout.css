@@ -288,6 +288,26 @@
   color: #333;
 }
 
+/* Recorder styles */
+.recorder-section {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 2px solid #eee;
+}
+.recorder-hint { color: #666; margin: 6px 0 12px; }
+.recorder { display: flex; flex-direction: column; gap: 10px; }
+.recorder-row { display: flex; align-items: center; gap: 10px; }
+.recorder-video { width: 240px; height: 180px; background: #000; border-radius: 8px; }
+.recorder-controls { display: flex; align-items: center; gap: 10px; }
+.recorder-preview { width: 260px; height: 180px; border-radius: 8px; }
+.recorder-btn { padding: 8px 12px; background: #667eea; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.recorder-btn.stop { background: #e74c3c; }
+.recorder-error { color: #e74c3c; }
+.recorder-success { color: #16a34a; font-weight: 600; }
+
+/* Orders video */
+.order-video { width: 100%; max-width: 420px; border-radius: 8px; background: #000; }
+
 /* Responsive */
 @media (max-width: 768px) {
   .checkout-content {
