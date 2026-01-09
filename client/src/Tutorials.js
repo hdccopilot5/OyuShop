@@ -254,6 +254,13 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
       )}
 
       <div className="tutorials-header">
+        <button 
+          onClick={() => window.location.href = '/'} 
+          className="back-btn"
+          title="Буцах"
+        >
+          ← Буцах
+        </button>
         <h1>📚 Заавар бичлэгүүд</h1>
       </div>
 

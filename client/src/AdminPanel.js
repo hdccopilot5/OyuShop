@@ -595,12 +595,21 @@ function AdminPanel({ onLogout }) {
     }
   };
 
+  const handleEditTutorial = (tutorial) => {
+    setTutorialForm({ title: tutorial.title, description: tutorial.description || '' });
+    setEditingLogId(tutorial._id);
+    window.scrollTo({ top: document.querySelector('.inventory-form').offsetTop - 100, behavior: 'smooth' });
+  };
+
   const handleDeleteTutorial = async (id) => {
     if (!window.confirm('Энэ бичлэгийг устгах уу?')) return;
     try {
       const res = await fetch(`https://oyushop.onrender.com/api/tutorials/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setMessage('✅ Устгагдлаа');
+        setEditingLogId(null);
+        setTutorialForm({ title: '', description: '' });
+        setTutorialVideoFile(null);
         fetchTutorials();
       }
     } catch (e) {
@@ -1135,16 +1144,31 @@ function AdminPanel({ onLogout }) {
                   <label>Гарчиг *</label>
                   <input type="text" name="title" value={tutorialForm.title} onChange={handleTutorialInput} placeholder="Жишээ: Хүргэлтийн заавар" required />
                 </div>
-                <div className="form-group">
-                  <label>Видео файл *</label>
-                  <input type="file" accept="video/*" onChange={handleTutorialFile} required />
-                </div>
+                {!editingLogId && (
+                  <div className="form-group">
+                    <label>Видео файл *</label>
+                    <input type="file" accept="video/*" onChange={handleTutorialFile} required={!editingLogId} />
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label>Тайлбар</label>
                 <textarea name="description" value={tutorialForm.description} onChange={handleTutorialInput} placeholder="Богино тайлбар..." rows="2" />
               </div>
-              <button type="submit" className="submit-btn">Нэмэх</button>
+              <div style={{display: 'flex', gap: '10px'}}>
+                <button type="submit" className="submit-btn">
+                  {editingLogId ? '💾 Засах' : '➕ Нэмэх'}
+                </button>
+                {editingLogId && (
+                  <button type="button" onClick={() => {
+                    setEditingLogId(null);
+                    setTutorialForm({ title: '', description: '' });
+                    setTutorialVideoFile(null);
+                  }} className="cancel-btn">
+                    ✕ Цуцлах
+                  </button>
+                )}
+              </div>
             </form>
 
             <div className="inventory-report">
@@ -1171,8 +1195,9 @@ function AdminPanel({ onLogout }) {
                             {t.description && (<><br/><small>{t.description}</small></>)}
                           </td>
                           <td>{new Date(t.createdAt).toLocaleString('mn-MN')}</td>
-                          <td>
+                          <td style={{display: 'flex', gap: '8px'}}>
                             <a href={t.videoUrl} target="_blank" rel="noreferrer" className="edit-btn" title="Үзэх">▶️</a>
+                            <button onClick={() => handleEditTutorial(t)} className="edit-btn" title="Засах">✏️</button>
                             <button onClick={() => handleDeleteTutorial(t._id)} className="delete-btn" title="Устгах">🗑️</button>
                           </td>
                         </tr>
