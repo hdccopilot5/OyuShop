@@ -9,7 +9,7 @@ import Tutorials from "./Tutorials";
 // Shop page component
 function ShopPage({ 
   products, category, loading, cartItems, 
-  setCategory, addToCart, increaseQuantity, decreaseQuantity, handleCheckout 
+  setCategory, addToCart, increaseQuantity, decreaseQuantity, handleCheckout, toggleDarkMode, darkMode
 }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState({});
   const [zoomImage, setZoomImage] = useState(null);
@@ -100,6 +100,9 @@ function ShopPage({
             >
               🛒 Сагс ({cartItems.length})
             </button>
+            <button onClick={toggleDarkMode} className="dark-mode-toggle" title={darkMode ? 'Цагаан өнгө' : 'Хар өнгө'}>
+              {darkMode ? '☀️' : '🌙'}
+            </button>
           </div>
         </div>
 
@@ -183,11 +186,18 @@ function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [isCheckout, setIsCheckout] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (token) {
       setIsAdminLoggedIn(true);
+    }
+    // Load dark mode preference
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(savedDarkMode);
+    if (savedDarkMode) {
+      document.body.classList.add('dark-mode');
     }
   }, []);
 
@@ -269,6 +279,17 @@ function App() {
     navigate('/');
   };
 
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('darkMode', newMode.toString());
+    if (newMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  };
+
   return (
     <Routes>
       <Route 
@@ -284,6 +305,8 @@ function App() {
             increaseQuantity={increaseQuantity}
             decreaseQuantity={decreaseQuantity}
             handleCheckout={handleCheckout}
+            toggleDarkMode={toggleDarkMode}
+            darkMode={darkMode}
           />
         }
       />
