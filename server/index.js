@@ -45,18 +45,24 @@ app.post('/api/upload/video', upload.single('video'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'Файл илгээгээгүй байна' });
     }
 
+    console.log('📹 Video upload:', req.file.filename, 'size:', req.file.size);
+    console.log('☁️ Cloudinary enabled:', CLOUDINARY_ENABLED);
+
     // If Cloudinary is enabled, upload to Cloudinary and return secure URL
     if (CLOUDINARY_ENABLED) {
       try {
+        console.log('🚀 Uploading to Cloudinary...');
         const result = await cloudinary.uploader.upload(req.file.path, {
           resource_type: 'video',
           folder: 'tutorials'
         });
+        console.log('✅ Cloudinary success:', result.secure_url);
         // Clean up local temp file
         try { fs.unlinkSync(req.file.path); } catch {}
         return res.json({ success: true, url: result.secure_url });
       } catch (e) {
-        console.log('Cloudinary upload error:', e.message);
+        console.log('❌ Cloudinary upload error:', e.message);
+        console.log('Error details:', e);
         // Fallback to serving local file if Cloudinary fails
         const absoluteUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
         return res.json({ success: true, url: absoluteUrl, cloudinary: false });
@@ -64,6 +70,7 @@ app.post('/api/upload/video', upload.single('video'), async (req, res) => {
     }
 
     // Cloudinary disabled: serve local file URL
+    console.log('⚠️ Cloudinary disabled, using local file');
     const absoluteUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     res.json({ success: true, url: absoluteUrl, cloudinary: false });
   } catch (err) {
