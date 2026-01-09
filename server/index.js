@@ -46,10 +46,10 @@ app.post('/api/upload/video', upload.single('video'), async (req, res) => {
     }
 
     console.log('📹 Video upload:', req.file.filename, 'size:', req.file.size);
-    console.log('☁️ Cloudinary enabled:', CLOUDINARY_ENABLED);
+    console.log('☁️ Cloudinary ready:', CLOUDINARY_READY);
 
     // If Cloudinary is enabled, upload to Cloudinary and return secure URL
-    if (CLOUDINARY_ENABLED) {
+    if (CLOUDINARY_READY) {
       try {
         console.log('🚀 Uploading to Cloudinary...');
         const result = await cloudinary.uploader.upload(req.file.path, {
@@ -114,19 +114,26 @@ const GPT5_ENABLED = String(process.env.GPT5_ENABLED ?? 'true').toLowerCase() ==
 const CLOUDINARY_ENABLED = String(process.env.CLOUDINARY_ENABLED ?? 'true').toLowerCase() === 'true';
 const ALLOW_LOCAL_UPLOADS = String(process.env.ALLOW_LOCAL_UPLOADS ?? 'false').toLowerCase() === 'true';
 
+const cloudinaryName = process.env.CLOUDINARY_NAME;
+const cloudinaryKey = process.env.CLOUDINARY_API_KEY;
+const cloudinarySecret = process.env.CLOUDINARY_API_SECRET;
+const CLOUDINARY_READY = CLOUDINARY_ENABLED && cloudinaryName && cloudinaryKey && cloudinarySecret;
+
 // Cloudinary config
-if (CLOUDINARY_ENABLED) {
+if (CLOUDINARY_READY) {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_NAME || 'dbpzliwb',
-    api_key: process.env.CLOUDINARY_API_KEY || '8371393443584496',
-    api_secret: process.env.CLOUDINARY_API_SECRET || '8fq62pCidXd_uS93YKLQA3LooHc'
+    cloud_name: cloudinaryName,
+    api_key: cloudinaryKey,
+    api_secret: cloudinarySecret
   });
   console.log('✅ Cloudinary сонгогдлоо');
+} else {
+  console.log('⚠️ Cloudinary тохиргоо дутуу. CLOUDINARY_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET шалгана уу.');
 }
 
 // Public config endpoint for clients
 app.get('/api/config', (req, res) => {
-  res.json({ gpt5Enabled: GPT5_ENABLED, cloudinaryEnabled: CLOUDINARY_ENABLED });
+  res.json({ gpt5Enabled: GPT5_ENABLED, cloudinaryEnabled: CLOUDINARY_READY });
 });
 
 // Health check endpoint - keep-alive-д ашиглана
