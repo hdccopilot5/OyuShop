@@ -1,1 +1,1 @@
-mongodb+srv://oyuadmin:MongoI@2020@oyushop.pkfj1cb.mongodb.net/babyshop?appName=OyuShop
+mongodb+srv://oyuadmin:Mongol2020@oyushop.pkfj1cb.mongodb.net/babyshop?appName=OyuShop
