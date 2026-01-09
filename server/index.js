@@ -169,7 +169,8 @@ const ProductSchema = new mongoose.Schema({
   category: String,
   image: String,
   images: [String],
-  stock: { type: Number, default: 0 }
+  stock: { type: Number, default: 0 },
+  orderIndex: { type: Number, default: () => Date.now() }
 });
 
 const Product = mongoose.model('Product', ProductSchema);
@@ -187,6 +188,9 @@ const OrderSchema = new mongoose.Schema({
     quantity: Number
   }],
   totalPrice: Number,
+  subtotal: Number,
+  promoCode: String,
+  discountAmount: { type: Number, default: 0 },
   orderDate: { type: Date, default: Date.now },
   status: { type: String, default: 'Шинэ захиалга' },
   videoUrl: String
@@ -209,6 +213,20 @@ const InventoryLogSchema = new mongoose.Schema({
 
 const InventoryLog = mongoose.model('InventoryLog', InventoryLogSchema);
 
+// Купон / урамшууллын код
+const PromoCodeSchema = new mongoose.Schema({
+  code: { type: String, unique: true },
+  type: { type: String, enum: ['percent', 'flat'], default: 'percent' },
+  amount: Number,
+  active: { type: Boolean, default: true },
+  usageLimit: { type: Number, default: 0 },
+  usedCount: { type: Number, default: 0 },
+  expiresAt: Date,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const PromoCode = mongoose.model('PromoCode', PromoCodeSchema);
+
 // Заавар бичлэгийн загвар
 const TutorialSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -228,7 +246,8 @@ const mockProducts = [
     price: 25000,
     category: 'baby',
     image: 'https://via.placeholder.com/200?text=Baby+Blanket',
-    stock: 15
+    stock: 15,
+    orderIndex: 1
   },
   {
     _id: '2',
@@ -237,7 +256,8 @@ const mockProducts = [
     price: 45000,
     category: 'moms',
     image: 'https://via.placeholder.com/200?text=Mom+Wear',
-    stock: 8
+    stock: 8,
+    orderIndex: 2
   },
   {
     _id: '3',
@@ -246,7 +266,8 @@ const mockProducts = [
     price: 35000,
     category: 'baby',
     image: 'https://via.placeholder.com/200?text=Toy',
-    stock: 12
+    stock: 12,
+    orderIndex: 3
   },
   {
     _id: '4',
@@ -255,7 +276,8 @@ const mockProducts = [
     price: 18000,
     category: 'baby',
     image: 'https://via.placeholder.com/200?text=Baby+Bottle',
-    stock: 20
+    stock: 20,
+    orderIndex: 4
   },
   {
     _id: '5',
@@ -264,7 +286,8 @@ const mockProducts = [
     price: 22000,
     category: 'moms',
     image: 'https://via.placeholder.com/200?text=Water+Bottle',
-    stock: 10
+    stock: 10,
+    orderIndex: 5
   },
   {
     _id: '6',
@@ -273,7 +296,8 @@ const mockProducts = [
     price: 32000,
     category: 'baby',
     image: 'https://via.placeholder.com/200?text=Baby+Clothes',
-    stock: 18
+    stock: 18,
+    orderIndex: 6
   }
 ];
 
@@ -303,15 +327,24 @@ let tutorialMocks = [
   // { _id: 't1', title: 'Жишээ заавар', description: 'Хүргэлтийн заавар', videoUrl: 'https://example.com/video.mp4', createdAt: new Date() }
 ];
 
+let promoMocks = [
+  { _id: 'p1', code: 'WELCOME10', type: 'percent', amount: 10, active: true, usageLimit: 0, usedCount: 0 },
+  { _id: 'p2', code: '5000OFF', type: 'flat', amount: 5000, active: true, usageLimit: 100, usedCount: 0 }
+];
+
 // API: Хүүхдийн болон төрсөн эхийн барааны жагсаалт
 app.get('/api/products', async (req, res) => {
   const { category } = req.query;
+  const lowStockThreshold = req.query.lowStock ? Number(req.query.lowStock) : null;
   
   if (isMongoConnected) {
     try {
       let filter = {};
       if (category) filter.category = category;
-      const products = await Product.find(filter);
+      if (!isNaN(lowStockThreshold)) {
+        filter.stock = { $lt: lowStockThreshold };
+      }
+      const products = await Product.find(filter).sort({ orderIndex: 1, name: 1 });
       return res.json(products);
     } catch (err) {
       console.log('MongoDB асалтын алдаа:', err.message);
@@ -323,14 +356,22 @@ app.get('/api/products', async (req, res) => {
   if (category) {
     products = products.filter(p => p.category === category);
   }
-  res.json(products);
+  if (!isNaN(lowStockThreshold)) {
+    products = products.filter(p => (p.stock || 0) < lowStockThreshold);
+  }
+  res.json(products.sort((a,b) => (a.orderIndex||0) - (b.orderIndex||0)));
 });
 
 // API: Шинэ бараа нэмэх (админ)
 app.post('/api/products', async (req, res) => {
+  const payload = { ...req.body };
+  if (!payload.orderIndex) {
+    const maxIndex = mockProducts.reduce((m,p)=>Math.max(m, p.orderIndex||0), 0) + 1;
+    payload.orderIndex = maxIndex;
+  }
   if (isMongoConnected) {
     try {
-      const product = new Product(req.body);
+      const product = new Product(payload);
       await product.save();
       return res.json(product);
     } catch (err) {
@@ -339,7 +380,7 @@ app.post('/api/products', async (req, res) => {
   }
   
   // Mock хариу
-  const newProduct = { _id: Date.now().toString(), ...req.body };
+  const newProduct = { _id: Date.now().toString(), ...payload };
   mockProducts.push(newProduct);
   res.json(newProduct);
 });
@@ -391,6 +432,65 @@ app.put('/api/products/:id', async (req, res) => {
   res.status(404).json({ success: false, message: 'Бараа олдсонгүй' });
 });
 
+// API: Барааны дараалал шинэчлэх (drag & drop)
+app.post('/api/products/reorder', requireAdmin, async (req, res) => {
+  const { orderedIds } = req.body;
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+    return res.status(400).json({ success: false, message: 'orderedIds шаардлагатай' });
+  }
+
+  if (isMongoConnected) {
+    try {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await Product.findByIdAndUpdate(orderedIds[i], { orderIndex: i + 1 });
+      }
+      return res.json({ success: true });
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+      return res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
+    }
+  }
+
+  orderedIds.forEach((id, idx) => {
+    const p = mockProducts.find(m => m._id === id);
+    if (p) p.orderIndex = idx + 1;
+  });
+  res.json({ success: true });
+});
+
+// API: Бөөний үнийн өөрчлөлт (хувиар)
+app.post('/api/products/bulk-price', requireAdmin, async (req, res) => {
+  const { ids, percent } = req.body;
+  if (!Array.isArray(ids) || typeof percent !== 'number') {
+    return res.status(400).json({ success: false, message: 'ids ба percent шаардлагатай' });
+  }
+  const factor = 1 + percent / 100;
+
+  if (isMongoConnected) {
+    try {
+      for (const id of ids) {
+        const prod = await Product.findById(id);
+        if (prod) {
+          prod.price = Math.max(0, Math.round(prod.price * factor));
+          await prod.save();
+        }
+      }
+      return res.json({ success: true });
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+      return res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
+    }
+  }
+
+  ids.forEach(id => {
+    const prod = mockProducts.find(p => p._id === id);
+    if (prod) {
+      prod.price = Math.max(0, Math.round(prod.price * factor));
+    }
+  });
+  res.json({ success: true });
+});
+
 // API: Админ нэвтрэх
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body;
@@ -411,7 +511,7 @@ app.post('/api/admin/login', (req, res) => {
 
 // API: Захиалга үүсгэх
 app.post('/api/orders', async (req, res) => {
-  const { customerName, address, phone, notes, products, videoUrl } = req.body;
+  const { customerName, address, phone, notes, products, videoUrl, promoCode } = req.body;
   
   if (!customerName || !address || !phone || !products || products.length === 0) {
     return res.status(400).json({ 
@@ -420,6 +520,35 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 
+  // Дүн тооцоолол
+  const subtotal = products.reduce((sum, p) => sum + (p.price * p.quantity), 0);
+
+  const applyPromo = async (code, total) => {
+    if (!code) return { discount: 0, promo: null };
+    let promo = null;
+    if (isMongoConnected) {
+      promo = await PromoCode.findOne({ code, active: true });
+    } else {
+      promo = promoMocks.find(p => p.code === code && p.active);
+    }
+    if (!promo) return { discount: 0, promo: null };
+    if (promo.expiresAt && new Date(promo.expiresAt) < new Date()) return { discount: 0, promo: null };
+    if (promo.usageLimit && promo.usedCount >= promo.usageLimit) return { discount: 0, promo: null };
+
+    const discount = promo.type === 'flat'
+      ? Math.min(total, promo.amount)
+      : Math.min(total, Math.round((promo.amount / 100) * total));
+    return { discount, promo };
+  };
+
+  let discountAmount = 0;
+  let promoDoc = null;
+  try {
+    const resPromo = await applyPromo(promoCode, subtotal);
+    discountAmount = resPromo.discount;
+    promoDoc = resPromo.promo;
+  } catch {}
+
   const orderData = {
     customerName,
     address,
@@ -427,7 +556,10 @@ app.post('/api/orders', async (req, res) => {
     notes,
     products,
     videoUrl: videoUrl || '',
-    totalPrice: products.reduce((sum, p) => sum + (p.price * p.quantity), 0),
+    subtotal,
+    discountAmount,
+    promoCode: promoDoc ? promoCode : null,
+    totalPrice: Math.max(0, subtotal - discountAmount),
     orderDate: new Date(),
     status: 'Шинэ захиалга'
   };
@@ -455,6 +587,9 @@ app.post('/api/orders', async (req, res) => {
       // Захиалга хадгалах
       const order = new Order(orderData);
       await order.save();
+      if (promoDoc) {
+        await PromoCode.findByIdAndUpdate(promoDoc._id, { $inc: { usedCount: 1 } });
+      }
       
       // Үлдэгдэл хасах
       for (const item of products) {
@@ -474,6 +609,9 @@ app.post('/api/orders', async (req, res) => {
   // Mock fallback
   const order = { _id: Date.now().toString(), ...orderData };
   orders.push(order);
+  if (promoDoc) {
+    promoDoc.usedCount = (promoDoc.usedCount || 0) + 1;
+  }
   res.json({ success: true, message: 'Захиалга хүлээн авлаа', order });
 });
 
@@ -489,6 +627,42 @@ app.get('/api/orders', requireAdmin, async (req, res) => {
   }
   
   res.json(orders);
+});
+
+// API: Orders CSV export (admin)
+app.get('/api/orders/export/csv', requireAdmin, async (req, res) => {
+  try {
+    let exportOrders = orders;
+    if (isMongoConnected) {
+      exportOrders = await Order.find().sort({ _id: -1 });
+    }
+
+    const header = ['customerName','phone','address','notes','subtotal','discountAmount','promoCode','totalPrice','status','orderDate','products'];
+    const rows = exportOrders.map(o => {
+      const items = (o.products || []).map(p => `${p.name} x${p.quantity}`).join(' | ');
+      return [
+        escapeCsv(o.customerName),
+        escapeCsv(o.phone),
+        escapeCsv(o.address),
+        escapeCsv(o.notes || ''),
+        o.subtotal || o.totalPrice || 0,
+        o.discountAmount || 0,
+        escapeCsv(o.promoCode || ''),
+        o.totalPrice || 0,
+        escapeCsv(o.status || ''),
+        new Date(o.orderDate || o._id).toISOString(),
+        escapeCsv(items)
+      ].join(',');
+    });
+
+    const csv = [header.join(','), ...rows].join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="orders.csv"');
+    return res.send(csv);
+  } catch (e) {
+    console.log('CSV export error:', e.message);
+    res.status(500).send('CSV export failed');
+  }
 });
 
 // API: Захиалгын дэлгэрэнгүй
@@ -509,6 +683,97 @@ app.get('/api/orders/:id', requireAdmin, async (req, res) => {
     res.json(order);
   } else {
     res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
+  }
+});
+
+// Helper: escape CSV
+const escapeCsv = (v) => {
+  if (v === null || v === undefined) return '';
+  const s = String(v).replace(/"/g, '""');
+  if (s.search(/([",\n])/g) >= 0) {
+    return '"' + s + '"';
+  }
+  return s;
+};
+
+// Stats helpers
+const startOfToday = () => {
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  return d;
+};
+
+const daysAgo = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  d.setHours(0,0,0,0);
+  return d;
+};
+
+// API: Stats summary (admin)
+app.get('/api/stats/summary', requireAdmin, async (req, res) => {
+  try {
+    const today = startOfToday();
+    const seven = daysAgo(7);
+
+    let todays = orders.filter(o => new Date(o.orderDate) >= today);
+    let last7 = orders.filter(o => new Date(o.orderDate) >= seven);
+
+    if (isMongoConnected) {
+      todays = await Order.find({ orderDate: { $gte: today } });
+      last7 = await Order.find({ orderDate: { $gte: seven } });
+    }
+
+    const sum = (arr) => arr.reduce((s,o)=>s+(o.totalPrice||0),0);
+
+    return res.json({
+      todayOrders: todays.length,
+      todayAmount: sum(todays),
+      last7Orders: last7.length,
+      last7Amount: sum(last7)
+    });
+  } catch (e) {
+    console.log('Stats error:', e.message);
+    res.status(500).json({ success:false, message:'Stats error' });
+  }
+});
+
+// API: Top products (admin)
+app.get('/api/stats/top-products', requireAdmin, async (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 5;
+    const range = req.query.range || '7d';
+    let since = daysAgo(7);
+    if (range === '30d') since = daysAgo(30);
+    if (range === 'today') since = startOfToday();
+
+    let result = [];
+    if (isMongoConnected) {
+      result = await Order.aggregate([
+        { $match: { orderDate: { $gte: since } } },
+        { $unwind: '$products' },
+        { $group: { _id: '$products._id', name: { $first: '$products.name' }, qty: { $sum: '$products.quantity' }, revenue: { $sum: { $multiply: ['$products.quantity', '$products.price'] } } } },
+        { $sort: { qty: -1 } },
+        { $limit: limit }
+      ]);
+    } else {
+      const map = new Map();
+      orders.filter(o => new Date(o.orderDate) >= since).forEach(o => {
+        (o.products||[]).forEach(p => {
+          const key = p._id || p.name;
+          const cur = map.get(key) || { _id: key, name: p.name, qty:0, revenue:0 };
+          cur.qty += p.quantity;
+          cur.revenue += (p.quantity * p.price);
+          map.set(key, cur);
+        });
+      });
+      result = Array.from(map.values()).sort((a,b)=>b.qty-a.qty).slice(0, limit);
+    }
+
+    res.json(result);
+  } catch (e) {
+    console.log('Top products error:', e.message);
+    res.status(500).json({ success:false, message:'Top products error' });
   }
 });
 
@@ -871,4 +1136,105 @@ app.delete('/api/tutorials/:id', async (req, res) => {
     return res.json({ success: true });
   }
   res.status(404).json({ success: false, message: 'Олдсонгүй' });
+});
+
+// API: Купон/Урамшуулал (admin)
+app.get('/api/promocodes', requireAdmin, async (req, res) => {
+  if (isMongoConnected) {
+    try {
+      const items = await PromoCode.find().sort({ createdAt: -1 });
+      return res.json(items);
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+    }
+  }
+  res.json(promoMocks.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)));
+});
+
+app.post('/api/promocodes', requireAdmin, async (req, res) => {
+  const { code, type, amount, usageLimit, expiresAt, active } = req.body;
+  if (!code || !amount) {
+    return res.status(400).json({ success: false, message: 'Код болон дүн заавал' });
+  }
+
+  if (isMongoConnected) {
+    try {
+      const doc = new PromoCode({
+        code: code.trim().toUpperCase(),
+        type: type || 'percent',
+        amount: Number(amount),
+        usageLimit: Number(usageLimit) || 0,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        active: active !== false
+      });
+      await doc.save();
+      return res.json({ success: true, promo: doc });
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+      return res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
+    }
+  }
+
+  const exists = promoMocks.find(p => p.code === code.trim().toUpperCase());
+  if (exists) return res.status(400).json({ success: false, message: 'Код давхцаж байна' });
+  const mock = {
+    _id: Date.now().toString(),
+    code: code.trim().toUpperCase(),
+    type: type || 'percent',
+    amount: Number(amount),
+    usageLimit: Number(usageLimit) || 0,
+    usedCount: 0,
+    expiresAt: expiresAt ? new Date(expiresAt) : null,
+    active: active !== false,
+    createdAt: new Date()
+  };
+  promoMocks.push(mock);
+  res.json({ success: true, promo: mock });
+});
+
+app.delete('/api/promocodes/:id', requireAdmin, async (req, res) => {
+  if (isMongoConnected) {
+    try {
+      const deleted = await PromoCode.findByIdAndDelete(req.params.id);
+      if (deleted) return res.json({ success: true });
+    } catch (err) {
+      console.log('MongoDB алдаа:', err.message);
+      return res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
+    }
+  }
+  const idx = promoMocks.findIndex(p => p._id === req.params.id);
+  if (idx !== -1) {
+    promoMocks.splice(idx, 1);
+    return res.json({ success: true });
+  }
+  res.status(404).json({ success: false, message: 'Код олдсонгүй' });
+});
+
+// API: Купон шалгах (public)
+app.post('/api/promocodes/validate', async (req, res) => {
+  const { code, total } = req.body;
+  if (!code) return res.status(400).json({ success: false, message: 'Код оруулна уу' });
+
+  const findPromo = async () => {
+    if (isMongoConnected) {
+      return PromoCode.findOne({ code: code.trim().toUpperCase(), active: true });
+    }
+    return promoMocks.find(p => p.code === code.trim().toUpperCase() && p.active);
+  };
+
+  try {
+    const promo = await findPromo();
+    if (!promo) return res.status(404).json({ success: false, message: 'Код олдсонгүй эсвэл идэвхгүй' });
+    if (promo.expiresAt && new Date(promo.expiresAt) < new Date()) return res.status(400).json({ success: false, message: 'Кодын хугацаа дууссан' });
+    if (promo.usageLimit && promo.usedCount >= promo.usageLimit) return res.status(400).json({ success: false, message: 'Кодын хэрэглээ дүүрсэн' });
+
+    const subtotal = Number(total) || 0;
+    const discount = promo.type === 'flat'
+      ? Math.min(subtotal, promo.amount)
+      : Math.min(subtotal, Math.round((promo.amount / 100) * subtotal));
+    return res.json({ success: true, discount, type: promo.type, amount: promo.amount, code: promo.code });
+  } catch (err) {
+    console.log('Promo validate error:', err.message);
+    res.status(500).json({ success: false, message: 'Алдаа гарлаа' });
+  }
 });

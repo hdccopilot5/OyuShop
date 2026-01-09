@@ -9,6 +9,9 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
     notes: '',
     phone: ''
   });
+  const [promoCode, setPromoCode] = useState('');
+  const [discount, setDiscount] = useState(0);
+  const [promoValid, setPromoValid] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -43,7 +46,8 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
         body: JSON.stringify({
           ...formData,
           products: cartItems,
-          videoUrl
+          videoUrl,
+          promoCode: promoValid ? promoCode : null
         })
       });
 
@@ -61,7 +65,33 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
     }
   };
 
+  const handlePromoCheck = async () => {
+    if (!promoCode.trim()) return;
+    try {
+      const res = await fetch('https://oyushop-1.onrender.com/api/promocodes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode, total: totalPrice })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.message || 'Код буруу байна');
+        setDiscount(0);
+        setPromoValid(false);
+      } else {
+        setDiscount(data.discount || 0);
+        setPromoValid(true);
+        setError('');
+      }
+    } catch {
+      setError('Код шалгах алдаа');
+      setDiscount(0);
+      setPromoValid(false);
+    }
+  };
+
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const finalPrice = Math.max(0, totalPrice - discount);
 
   return (
     <div className="checkout-container">
@@ -183,6 +213,23 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
             <div>
               <h3>Нийт үнэ:</h3>
               <div className="total-price">{totalPrice}₮</div>
+            </div>
+            {discount > 0 && (
+              <div className="promo-applied">
+                <p>🎉 Урамшуулал: <strong>-{discount}₮</strong></p>
+                <p>Төлөх дүн: <strong>{finalPrice}₮</strong></p>
+              </div>
+            )}
+            <div className="promo-box">
+              <input
+                type="text"
+                placeholder="Урамшууллын код"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              />
+              <button type="button" onClick={handlePromoCheck} className="promo-btn">
+                {promoValid ? '✓' : '🎟️'} Шалгах
+              </button>
             </div>
             <div className="delivery-info">
               <p>📦 Хүргэлт: <strong>5.000₮ - 8.000₮</strong></p>

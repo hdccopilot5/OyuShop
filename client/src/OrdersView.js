@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './OrdersView.css';
 
 function OrdersView() {
@@ -6,6 +6,9 @@ function OrdersView() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [exporting, setExporting] = useState(false);
+  const prevIdsRef = useRef(new Set());
+  const audioCtxRef = useRef(null);
 
   // Огноо форматлах функц
   const formatDate = (dateString) => {
@@ -71,9 +74,73 @@ function OrdersView() {
         }
       });
       const data = await response.json();
-      setOrders(data);
+      const newOrders = Array.isArray(data) ? data : [];
+      const newIds = new Set(newOrders.map(o => o._id));
+      const prevIds = prevIdsRef.current;
+      if (prevIds.size > 0) {
+        newOrders.forEach(o => {
+          if (!prevIds.has(o._id)) {
+            playBeep();
+            showNotification('🆕 Шинэ захиалга', `${o.customerName} захиалга өглөө`);
+          }
+        });
+      }
+      prevIdsRef.current = newIds;
+      setOrders(newOrders);
     } catch (err) {
       console.error('Алдаа:', err);
+    }
+  };
+
+  const playBeep = () => {
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 800;
+      gain.gain.value = 0.3;
+      osc.start();
+      setTimeout(() => osc.stop(), 200);
+    } catch {}
+  };
+
+  const showNotification = (title, body) => {
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, { body, icon: '/favicon.ico' });
+      } else if ('Notification' in window && Notification.permission !== 'denied') {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') new Notification(title, { body, icon: '/favicon.ico' });
+        });
+      }
+    } catch {}
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      setExporting(true);
+      const response = await fetch('https://oyushop-1.onrender.com/api/orders/export/csv', {
+        headers: {
+          ...authHeaders()
+        }
+      });
+      if (!response.ok) throw new Error('export failed');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('❌ CSV татаж чадсангүй. Админ эрх шалгана уу.');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -135,19 +202,24 @@ function OrdersView() {
     <div className="orders-view">
       <div className="orders-header">
         <h2>📋 Хэрэглэгчийн захиалгууд ({filteredOrders.length}/{orders.length})</h2>
-        <div className="orders-filter">
-          <label htmlFor="statusFilter">Статус шүүх:</label>
-          <select
-            id="statusFilter"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="ALL">📋 Бүгд</option>
-            <option value="Шинэ захиалга">🆕 Зөвхөн шинэ</option>
-            <option value="Хүлээгдэж байгаа">⏳ Хүлээгдэж байгаа</option>
-            <option value="Хүргэгдсэн">✅ Хүргэгдсэн</option>
-            <option value="Цуцалсан">❌ Цуцалсан</option>
-          </select>
+        <div className="orders-actions">
+          <div className="orders-filter">
+            <label htmlFor="statusFilter">Статус шүүх:</label>
+            <select
+              id="statusFilter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">📋 Бүгд</option>
+              <option value="Шинэ захиалга">🆕 Зөвхөн шинэ</option>
+              <option value="Хүлээгдэж байгаа">⏳ Хүлээгдэж байгаа</option>
+              <option value="Хүргэгдсэн">✅ Хүргэгдсэн</option>
+              <option value="Цуцалсан">❌ Цуцалсан</option>
+            </select>
+          </div>
+          <button onClick={handleExportCsv} className="export-btn" disabled={exporting}>
+            {exporting ? '⏳ Татаж байна...' : '📥 CSV татах'}
+          </button>
         </div>
       </div>
 

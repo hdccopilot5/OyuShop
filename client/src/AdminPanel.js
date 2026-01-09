@@ -50,6 +50,17 @@ function AdminPanel({ onLogout }) {
   const [tutorialForm, setTutorialForm] = useState({ title: '', description: '' });
   const [tutorialVideoFile, setTutorialVideoFile] = useState(null);
   const [config, setConfig] = useState({ cloudinaryEnabled: false });
+  const [stats, setStats] = useState({ todayOrders: 0, todayAmount: 0, last7Orders: 0, last7Amount: 0 });
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [topProducts, setTopProducts] = useState([]);
+  const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [lowStockThreshold, setLowStockThreshold] = useState(5);
+  const [promos, setPromos] = useState([]);
+  const [promoForm, setPromoForm] = useState({ code: '', type: 'percent', amount: '', usageLimit: '', expiresAt: '' });
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [reorderSaving, setReorderSaving] = useState(false);
+  const [bulkPercent, setBulkPercent] = useState('');
+  const dragIdRef = useRef(null);
 
   useEffect(() => {
     fetchProducts();
@@ -83,6 +94,79 @@ function AdminPanel({ onLogout }) {
       stopCameraScan();
     };
   }, []);
+
+  const adminHeaders = () => {
+    const token = localStorage.getItem('adminToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  useEffect(() => {
+    fetchStats(true);
+    fetchTopProducts();
+    fetchLowStock();
+    fetchPromos();
+    const id = setInterval(() => {
+      fetchStats(false);
+      fetchTopProducts(false);
+      fetchLowStock(false);
+    }, 20000);
+    return () => clearInterval(id);
+  }, [lowStockThreshold]);
+
+  const fetchStats = async (showSpinner = false) => {
+    if (showSpinner) setStatsLoading(true);
+    try {
+      const res = await fetch('https://oyushop-1.onrender.com/api/stats/summary', {
+        headers: { ...adminHeaders() }
+      });
+      if (!res.ok) throw new Error('stats failed');
+      const data = await res.json();
+      setStats(data);
+    } catch (err) {
+      console.error('Stats fetch error:', err);
+    } finally {
+      if (showSpinner) setStatsLoading(false);
+    }
+  };
+
+  const fetchTopProducts = async () => {
+    try {
+      const res = await fetch('https://oyushop-1.onrender.com/api/stats/top-products?range=7d&limit=5', {
+        headers: { ...adminHeaders() }
+      });
+      if (!res.ok) throw new Error('top products failed');
+      const data = await res.json();
+      setTopProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Top products fetch error:', err);
+    }
+  };
+
+  const fetchLowStock = async () => {
+    try {
+      const res = await fetch(`https://oyushop-1.onrender.com/api/products?lowStock=${lowStockThreshold}`);
+      if (!res.ok) throw new Error('low stock failed');
+      const data = await res.json();
+      setLowStockProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Low stock fetch error:', err);
+    }
+  };
+
+  const fetchPromos = async () => {
+    try {
+      const res = await fetch('https://oyushop-1.onrender.com/api/promocodes', {
+        headers: { ...adminHeaders() }
+      });
+      if (!res.ok) throw new Error('promos failed');
+      const data = await res.json();
+      setPromos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Promo fetch error:', err);
+    }
+  };
+
+  const formatMoney = (value) => (value || 0).toLocaleString('mn-MN');
 
   const fetchProducts = async () => {
     try {
@@ -172,6 +256,59 @@ function AdminPanel({ onLogout }) {
       images: prev.images.filter((_, i) => i !== index)
     }));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handlePromoInput = (e) => {
+    const { name, value } = e.target;
+    setPromoForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreatePromo = async (e) => {
+    e.preventDefault();
+    if (!promoForm.code || !promoForm.amount) {
+      setMessage('❌ Код болон дүнгээ оруулна уу');
+      return;
+    }
+    setPromoLoading(true);
+    try {
+      const res = await fetch('https://oyushop-1.onrender.com/api/promocodes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({
+          code: promoForm.code,
+          type: promoForm.type,
+          amount: Number(promoForm.amount),
+          usageLimit: promoForm.usageLimit ? Number(promoForm.usageLimit) : 0,
+          expiresAt: promoForm.expiresAt || null,
+          active: true
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Алдаа');
+      setMessage('✅ Купон нэмэгдлээ');
+      setPromoForm({ code: '', type: 'percent', amount: '', usageLimit: '', expiresAt: '' });
+      fetchPromos();
+    } catch (err) {
+      setMessage('❌ Код нэмэхэд алдаа: ' + err.message);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleDeletePromo = async (id) => {
+    if (!window.confirm('Энэ кодыг устгах уу?')) return;
+    try {
+      const res = await fetch(`https://oyushop-1.onrender.com/api/promocodes/${id}`, {
+        method: 'DELETE',
+        headers: { ...adminHeaders() }
+      });
+      if (res.ok) {
+        setMessage('✅ Код устлаа');
+        fetchPromos();
+      }
+    } catch (err) {
+      setMessage('❌ Код устгах алдаа');
+    }
   };
 
   const stopCameraScan = () => {
@@ -521,6 +658,70 @@ function AdminPanel({ onLogout }) {
     }
   };
 
+  const handleBulkPriceChange = async () => {
+    const percent = parseFloat(bulkPercent);
+    if (isNaN(percent)) {
+      setMessage('❌ Хувийн өөрчлөлт оруулна уу');
+      return;
+    }
+    const ids = filteredProducts.map(p => p._id);
+    if (ids.length === 0) {
+      setMessage('❌ Сонгогдсон бараа алга');
+      return;
+    }
+    if (!window.confirm(`Бүгдэд ${percent}% өөрчлөлт хийх үү? (${ids.length} бараа)`)) return;
+    try {
+      const res = await fetch('https://oyushop-1.onrender.com/api/products/bulk-price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({ ids, percent })
+      });
+      if (!res.ok) throw new Error('bulk failed');
+      setMessage('✅ Үнийн өөрчлөлт хийгдлээ');
+      fetchProducts();
+    } catch (err) {
+      setMessage('❌ Үнийн өөрчлөлт амжилтгүй');
+    }
+  };
+
+  const handleDragStart = (id) => {
+    dragIdRef.current = id;
+  };
+
+  const handleDragOver = (e, overId) => {
+    e.preventDefault();
+    if (!dragIdRef.current || dragIdRef.current === overId) return;
+    setProducts(prev => {
+      const arr = [...prev];
+      const from = arr.findIndex(p => p._id === dragIdRef.current);
+      const to = arr.findIndex(p => p._id === overId);
+      if (from === -1 || to === -1) return prev;
+      const [moved] = arr.splice(from, 1);
+      arr.splice(to, 0, moved);
+      return arr;
+    });
+  };
+
+  const handleDragEnd = async () => {
+    if (!dragIdRef.current) return;
+    const orderedIds = (products || []).map(p => p._id);
+    setReorderSaving(true);
+    try {
+      await fetch('https://oyushop-1.onrender.com/api/products/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({ orderedIds })
+      });
+      setMessage('✅ Дараалал хадгаллаа');
+      fetchProducts();
+    } catch (err) {
+      setMessage('❌ Дараалал хадгалах алдаа');
+    } finally {
+      setReorderSaving(false);
+      dragIdRef.current = null;
+    }
+  };
+
   const handleEdit = (product) => {
     setFormData({
       name: product.name,
@@ -624,12 +825,114 @@ function AdminPanel({ onLogout }) {
     }
   };
 
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (p.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="admin-panel">
       <header className="admin-header">
         <h1>⚙️ Админ панель</h1>
         <button onClick={onLogout} className="logout-btn">Гарах</button>
       </header>
+
+      <section className="stats-section">
+        <div className="stats-top">
+          <div className="section-title">
+            <h2>📈 Борлуулалтын тойм</h2>
+            <div className="stats-actions">
+              <button className="refresh-btn" onClick={() => { fetchStats(true); fetchTopProducts(); fetchLowStock(); }}>
+                ↻ Шинэчлэх
+              </button>
+            </div>
+          </div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <p className="stat-label">Өнөөдрийн захиалга</p>
+              <p className="stat-value">{stats.todayOrders}</p>
+              <p className="stat-sub">Дүн: {formatMoney(stats.todayAmount)}₮</p>
+            </div>
+            <div className="stat-card">
+              <p className="stat-label">Сүүлийн 7 хоног</p>
+              <p className="stat-value">{stats.last7Orders}</p>
+              <p className="stat-sub">Дүн: {formatMoney(stats.last7Amount)}₮</p>
+            </div>
+            <div className="stat-card warning">
+              <div className="stat-row">
+                <p className="stat-label">Бага үлдэгдэл</p>
+                <span className="pill">≤ {lowStockThreshold}</span>
+              </div>
+              <p className="stat-value">{lowStockProducts.length}</p>
+              <p className="stat-sub">Доорх жагсаалтаас шалгана уу</p>
+              <div className="threshold-control">
+                <label>Босго:</label>
+                <input 
+                  type="number"
+                  value={lowStockThreshold}
+                  min="1"
+                  onChange={(e) => setLowStockThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="stats-bottom">
+          <div className="stat-card full">
+            <div className="section-title">
+              <h3>🏆 Сүүлийн 7 хоногийн хамгийн их зарагдсан</h3>
+              <small>Ширхэгээр эрэмбэлсэн</small>
+            </div>
+            {statsLoading && <p className="muted">Тойм ачаалж байна...</p>}
+            {!statsLoading && (
+              <div className="top-products">
+                {topProducts.length === 0 ? (
+                  <p className="muted">Өгөгдөл байхгүй</p>
+                ) : (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Бараа</th>
+                        <th>Ширхэг</th>
+                        <th>Орлого</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topProducts.map((p) => (
+                        <tr key={p._id || p.name}>
+                          <td>{p.name || 'Тодорхойгүй'}</td>
+                          <td>{p.qty}</td>
+                          <td>{formatMoney(p.revenue)}₮</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="stat-card full">
+            <div className="section-title">
+              <h3>⚠️ Бага үлдэгдэлтэй бараа</h3>
+              <small>{lowStockProducts.length} бараа</small>
+            </div>
+            {lowStockProducts.length === 0 ? (
+              <p className="muted">Бүх барааны үлдэгдэл хэвийн байна</p>
+            ) : (
+              <ul className="low-stock-list">
+                {lowStockProducts.map((p) => (
+                  <li key={p._id}>
+                    <span>{p.name}</span>
+                    <span className="pill danger">{p.stock || 0} ширхэг</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </section>
 
       <div className="admin-content">
         <div className="form-section">
@@ -785,10 +1088,7 @@ function AdminPanel({ onLogout }) {
 
         <div className="products-section">
           <div className="products-header">
-            <h2>📦 Бүх бараа ({products.filter(p => 
-              p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              p.description.toLowerCase().includes(searchQuery.toLowerCase())
-            ).length})</h2>
+            <h2>📦 Бүх бараа ({filteredProducts.length})</h2>
             <div className="products-header-actions">
               <input
                 type="text"
@@ -797,6 +1097,17 @@ function AdminPanel({ onLogout }) {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
               />
+              <span className="pill danger">⚠️ {lowStockProducts.length} бага үлдэгдэл</span>
+              <div className="bulk-box">
+                <input
+                  type="number"
+                  placeholder="%"
+                  value={bulkPercent}
+                  onChange={(e) => setBulkPercent(e.target.value)}
+                />
+                <button type="button" onClick={handleBulkPriceChange} className="bulk-btn">💸 Бүгдийг өөрчлөх</button>
+              </div>
+              {reorderSaving && <span className="pill">Хадгалж байна...</span>}
               <button 
                 type="button"
                 onClick={() => setShowProducts(!showProducts)} 
@@ -820,15 +1131,17 @@ function AdminPanel({ onLogout }) {
                 </tr>
               </thead>
               <tbody>
-                {products
-                  .filter(p => 
-                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    p.description.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
-                  .map(product => (
-                  <tr key={product._id}>
+                {filteredProducts.map(product => (
+                  <tr
+                    key={product._id}
+                    className={(product.stock || 0) <= lowStockThreshold ? 'low-stock-row' : ''}
+                    draggable
+                    onDragStart={() => handleDragStart(product._id)}
+                    onDragOver={(e) => handleDragOver(e, product._id)}
+                    onDragEnd={handleDragEnd}
+                  >
                     <td>
-                      <strong>{product.name}</strong>
+                      <strong>☰ {product.name}</strong>
                       <br />
                       <small>{product.description}</small>
                     </td>
@@ -1129,6 +1442,77 @@ function AdminPanel({ onLogout }) {
             </div>
           </>
         )}
+      </div>
+
+      <div className="admin-section">
+        <div className="section-header">
+          <h2>🎟️ Урамшууллын код</h2>
+          <small>{promos.length} код</small>
+        </div>
+
+        <form className="promo-form" onSubmit={handleCreatePromo}>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Код *</label>
+              <input name="code" value={promoForm.code} onChange={handlePromoInput} placeholder="WELCOME10" required />
+            </div>
+            <div className="form-group">
+              <label>Төрөл</label>
+              <select name="type" value={promoForm.type} onChange={handlePromoInput}>
+                <option value="percent">% хөнгөлөлт</option>
+                <option value="flat">Тогтмол дүн</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Дүн *</label>
+              <input type="number" name="amount" value={promoForm.amount} onChange={handlePromoInput} placeholder="10 эсвэл 5000" required />
+            </div>
+            <div className="form-group">
+              <label>Хэрэглэх дээд тоо</label>
+              <input type="number" name="usageLimit" value={promoForm.usageLimit} onChange={handlePromoInput} placeholder="0 = хязгааргүй" />
+            </div>
+            <div className="form-group">
+              <label>Дуусах огноо</label>
+              <input type="date" name="expiresAt" value={promoForm.expiresAt} onChange={handlePromoInput} />
+            </div>
+          </div>
+          <button type="submit" className="submit-btn" disabled={promoLoading}>{promoLoading ? 'Хүлээж байна...' : '➕ Код нэмэх'}</button>
+        </form>
+
+        <div className="promo-list">
+          {promos.length === 0 ? (
+            <p className="muted">Код байхгүй байна</p>
+          ) : (
+            <table className="inventory-table">
+              <thead>
+                <tr>
+                  <th>Код</th>
+                  <th>Төрөл</th>
+                  <th>Дүн</th>
+                  <th>Ашигласан</th>
+                  <th>Хугацаа</th>
+                  <th>Үйлдэл</th>
+                </tr>
+              </thead>
+              <tbody>
+                {promos.map(p => (
+                  <tr key={p._id}>
+                    <td><strong>{p.code}</strong></td>
+                    <td>{p.type === 'flat' ? 'Тогтмол' : '%'} </td>
+                    <td>{p.amount}</td>
+                    <td>{p.usedCount || 0}/{p.usageLimit || '∞'}</td>
+                    <td>{p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('mn-MN') : '∞'}</td>
+                    <td>
+                      <button onClick={() => handleDeletePromo(p._id)} className="delete-btn" title="Устгах">🗑️</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
 
       <div className="admin-section">
