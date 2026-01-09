@@ -444,10 +444,13 @@ function AdminPanel({ onLogout }) {
         });
 
         if (response.ok) {
+          const updatedProduct = await response.json();
           setMessage('✅ Бараа амжилттай засагдлаа');
           setEditingId(null);
           resetForm();
-          fetchProducts();
+          // Засагдсан барааг шууд жагсаалтад шинэчлэх
+          setProducts(prev => prev.map(p => p._id === editingId ? updatedProduct : p));
+          setTimeout(() => fetchProducts(), 500);
         } else {
           setMessage('❌ Бараа засах алдаа');
         }
@@ -460,9 +463,13 @@ function AdminPanel({ onLogout }) {
         });
 
         if (response.ok) {
+          const newProduct = await response.json();
           setMessage('✅ Бараа амжилттай нэмэгдлээ');
           resetForm();
-          fetchProducts();
+          // Шинэ барааг шууд жагсаалтад нэмэх
+          setProducts(prev => [newProduct, ...prev]);
+          // Database sync-г баталгаажуулахын тулд
+          setTimeout(() => fetchProducts(), 500);
         } else {
           const errorData = await response.json();
           setMessage(`❌ ${errorData.message || 'Бараа нэмэх алдаа'}`);
