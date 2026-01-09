@@ -14,6 +14,7 @@ function ShopPage({
 }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState({});
   const [zoomImage, setZoomImage] = useState(null);
+  const [showWishlist, setShowWishlist] = useState(false);
 
   const handleImageClick = (image) => {
     setZoomImage(image);
@@ -132,7 +133,7 @@ function ShopPage({
           <div className="header-buttons">
             <Link to="/tutorials" className="checkout-btn" style={{textDecoration: 'none'}}>🎬 Заавар</Link>
             <button 
-              onClick={() => alert(`Дуртай бараа: ${wishlist.length}`)}
+              onClick={() => setShowWishlist(true)}
               className="checkout-btn"
               title="Дуртай бараа"
             >
@@ -228,6 +229,40 @@ function ShopPage({
           <div className="zoom-modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="zoom-close-btn" onClick={closeZoom}>✕</button>
             <img src={zoomImage} alt="Томруулсан зураг" className="zoomed-image" />
+          </div>
+        </div>
+      )}
+
+      {showWishlist && (
+        <div className="zoom-modal" onClick={() => setShowWishlist(false)}>
+          <div className="wishlist-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="wishlist-modal-header">
+              <h2>❤️ Дуртай бараанууд ({wishlist.length})</h2>
+              <button className="zoom-close-btn" onClick={() => setShowWishlist(false)}>✕</button>
+            </div>
+            {wishlist.length === 0 ? (
+              <p className="no-wishlist">Дуртай бараа байхгүй байна</p>
+            ) : (
+              <div className="wishlist-grid">
+                {wishlist.map(p => (
+                  <div key={p._id} className="wishlist-item">
+                    <img src={p.image} alt={p.name} className="wishlist-item-image" />
+                    <div className="wishlist-item-info">
+                      <h4>{p.name}</h4>
+                      <p className="wishlist-item-price">{p.price}₮</p>
+                      <div className="wishlist-item-actions">
+                        <button onClick={() => addToCart(p)} className="add-to-cart-btn-small">
+                          🛒 Сагсанд
+                        </button>
+                        <button onClick={() => toggleWishlist(p)} className="remove-wishlist-btn" title="Хасах">
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
