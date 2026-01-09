@@ -34,6 +34,7 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
       setLoading(true);
       const res = await fetch('https://oyushop.onrender.com/api/tutorials');
       const data = await res.json();
+      console.log('Tutorials loaded:', data);
       setTutorials(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Заавар уншиж чадсангүй:', err);
@@ -277,7 +278,7 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
           {tutorials.map(tutorial => (
             <div key={tutorial._id} className="tutorial-card">
               <div className="tutorial-video-wrapper">
-                <video controls>
+                <video controls preload="metadata" crossOrigin="anonymous">
                   <source src={tutorial.videoUrl} type="video/mp4" />
                   Таны браузер видео ойлгодоггүй
                 </video>
