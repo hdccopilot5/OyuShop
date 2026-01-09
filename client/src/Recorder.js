@@ -105,54 +105,18 @@ function Recorder({ onUploaded }) {
     try {
       const ext = (mimeType && mimeType.includes('mp4')) ? 'mp4' : 'webm';
       const filename = `recording-${Date.now()}.${ext}`;
-      if (config.cloudinaryEnabled) {
-        // Use Cloudinary widget for upload
-        if (window.cloudinary && window.cloudinary.openUploadWidget) {
-          window.cloudinary.openUploadWidget(
-            {
-              cloudName: 'dbpzliwb',
-              uploadPreset: 'unsigned_preset',
-              resourceType: 'video',
-              multiple: false,
-              cropping: false
-            },
-            (error, result) => {
-              if (!error && result && result.event === 'success') {
-                onUploaded && onUploaded(result.info.secure_url);
-                setUploading(false);
-              } else if (error) {
-                setError('Видео илгээхэд алдаа гарлаа');
-                setUploading(false);
-              }
-            }
-          );
-        } else {
-          // Fallback: direct upload to Cloudinary via server
-          const fd = new FormData();
-          fd.append('video', blobToSend, filename);
-          const res = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
-          const data = await res.json();
-          if (data.success && data.url) {
-            onUploaded && onUploaded(data.url);
-          } else {
-            setError('Видео илгээхэд алдаа гарлаа');
-          }
-          setUploading(false);
-        }
+      const fd = new FormData();
+      fd.append('video', blobToSend, filename);
+      const res = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success && data.url) {
+        onUploaded && onUploaded(data.url);
       } else {
-        const fd = new FormData();
-        fd.append('video', blobToSend, filename);
-        const res = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (data.success && data.url) {
-          onUploaded && onUploaded(data.url);
-        } else {
-          setError('Видео илгээхэд алдаа гарлаа');
-        }
-        setUploading(false);
+        setError('Видео илгээхэд алдаа гарлаа');
       }
     } catch (e) {
       setError('Видео илгээхэд алдаа гарлаа');
+    } finally {
       setUploading(false);
     }
   };

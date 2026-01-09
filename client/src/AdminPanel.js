@@ -562,46 +562,13 @@ function AdminPanel({ onLogout }) {
       return;
     }
     try {
-      let videoUrl = '';
-      if (config.cloudinaryEnabled) {
-        // Use Cloudinary upload widget
-        if (window.cloudinary && window.cloudinary.openUploadWidget) {
-          window.cloudinary.openUploadWidget(
-            {
-              cloudName: 'dbpzliwb',
-              uploadPreset: 'unsigned_preset',
-              resourceType: 'video',
-              multiple: false,
-              cropping: false
-            },
-            (error, result) => {
-              if (!error && result && result.event === 'success') {
-                videoUrl = result.info.secure_url;
-                saveTutorialToServer(videoUrl);
-              } else if (error) {
-                setMessage('❌ Видео илгээхэд алдаа');
-              }
-            }
-          );
-        } else {
-          // Fallback: server upload
-          const fd = new FormData();
-          fd.append('video', tutorialVideoFile);
-          const up = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
-          const upData = await up.json();
-          if (!upData.success) throw new Error('upload failed');
-          videoUrl = upData.url;
-          saveTutorialToServer(videoUrl);
-        }
-      } else {
-        const fd = new FormData();
-        fd.append('video', tutorialVideoFile);
-        const up = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
-        const upData = await up.json();
-        if (!upData.success) throw new Error('upload failed');
-        videoUrl = upData.url;
-        saveTutorialToServer(videoUrl);
-      }
+      const fd = new FormData();
+      fd.append('video', tutorialVideoFile);
+      const up = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
+      const upData = await up.json();
+      if (!upData.success || !upData.url) throw new Error('upload failed');
+      const videoUrl = upData.url;
+      saveTutorialToServer(videoUrl);
     } catch (err) {
       setMessage('❌ Алдаа гарлаа');
     }

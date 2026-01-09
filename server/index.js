@@ -39,12 +39,36 @@ const upload = multer({
 });
 
 // API: Видео файл хуулж авах
-app.post('/api/upload/video', upload.single('video'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, message: 'Файл илгээгээгүй байна' });
+app.post('/api/upload/video', upload.single('video'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Файл илгээгээгүй байна' });
+    }
+
+    // If Cloudinary is enabled, upload to Cloudinary and return secure URL
+    if (CLOUDINARY_ENABLED) {
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          resource_type: 'video',
+          folder: 'tutorials'
+        });
+        // Clean up local temp file
+        try { fs.unlinkSync(req.file.path); } catch {}
+        return res.json({ success: true, url: result.secure_url });
+      } catch (e) {
+        console.log('Cloudinary upload error:', e.message);
+        // Fallback to serving local file if Cloudinary fails
+        const absoluteUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        return res.json({ success: true, url: absoluteUrl, cloudinary: false });
+      }
+    }
+
+    // Cloudinary disabled: serve local file URL
+    const absoluteUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    res.json({ success: true, url: absoluteUrl, cloudinary: false });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Видео илгээхэд алдаа гарлаа' });
   }
-  const absoluteUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-  res.json({ success: true, url: absoluteUrl });
 });
 
 // API: S3 presigned PUT URL авах (илүү найдвартай хадгалалт)
@@ -732,18 +756,22 @@ app.put('/api/inventory-logs/:id', async (req, res) => {
   res.status(404).json({ success: false, message: 'Бүртгэл олдсонгүй' });
 });
 
-// MongoDB-д холболт оролдох
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/babyshop';
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => {
-    isMongoConnected = true;
-    console.log('✅ MongoDB холбогдлоо!');
-  })
-  .catch((err) => {
-    console.log('⚠️ MongoDB холбогдоогүй. Mock өгөгдөл ашиглаж байна.');
-    console.log('Алдаа:', err.message);
-  });
+// MongoDB-д холболт оролдох (MONGODB_URI байхгүй бол mock-оор үргэлжилнэ)
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.log('⚠️ MongoDB URI тохируулаагүй. Mock өгөгдөл ашиглаж байна.');
+} else {
+  mongoose
+    .connect(MONGODB_URI)
+    .then(() => {
+      isMongoConnected = true;
+      console.log('✅ MongoDB холбогдлоо!');
+    })
+    .catch((err) => {
+      console.log('⚠️ MongoDB холбогдоогүй. Mock өгөгдөл ашиглаж байна.');
+      console.log('Алдаа:', err.message);
+    });
+}
 
 // Сервер асаах
 const PORT = process.env.PORT || 3001;
