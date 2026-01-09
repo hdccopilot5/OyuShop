@@ -15,6 +15,20 @@ function ShopPage({
   const [selectedImageIndex, setSelectedImageIndex] = useState({});
   const [zoomImage, setZoomImage] = useState(null);
   const [showWishlist, setShowWishlist] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleImageClick = (image) => {
     setZoomImage(image);
@@ -59,6 +73,15 @@ function ShopPage({
 
     return matchesSearch && matchesPrice;
   });
+
+  const SkeletonCard = () => (
+    <div className="skeleton-card">
+      <div className="skeleton-image"></div>
+      <div className="skeleton-text"></div>
+      <div className="skeleton-text short"></div>
+      <div className="skeleton-button"></div>
+    </div>
+  );
 
   return (
     <div className="app-container">
@@ -161,7 +184,11 @@ function ShopPage({
           </div>
         </div>
 
-        {loading && <p className="loading">Ачаалж байна...</p>}
+        {loading && (
+          <div className="products-grid">
+            {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)}
+          </div>
+        )}
 
         {!loading && filteredProducts.length === 0 && (
           <p className="no-products">{searchQuery || priceFilter !== 'all' ? 'Хайлтад тохирох бараа олдсонгүй' : 'Энэ ангиллд бараа байхгүй байна'}</p>
@@ -208,11 +235,15 @@ function ShopPage({
                 <div className="product-footer">
                   <span className="product-price">{p.price}₮</span>
                   <button 
-                    onClick={() => addToCart(p)}
-                    className="add-to-cart-btn"
+                    onClick={() => {
+                      addToCart(p);
+                      setAddingToCart(p._id);
+                      setTimeout(() => setAddingToCart(null), 600);
+                    }}
+                    className={`add-to-cart-btn ${addingToCart === p._id ? 'adding' : ''}`}
                     disabled={(p.stock || 0) === 0}
                   >
-                    {(p.stock || 0) === 0 ? 'Үлдэгдэлгүй' : 'Сагс дээр нэмэх'}
+                    {(p.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === p._id ? '✓ Нэмэгдлээ' : 'Сагс дээр нэмэх'}
                   </button>
                 </div>
                 <div className="product-stock">
@@ -231,6 +262,12 @@ function ShopPage({
             <img src={zoomImage} alt="Томруулсан зураг" className="zoomed-image" />
           </div>
         </div>
+      )}
+
+      {showScrollTop && (
+        <button className="scroll-to-top" onClick={scrollToTop} title="Дээш очих">
+          ⬆️
+        </button>
       )}
 
       {showWishlist && (
