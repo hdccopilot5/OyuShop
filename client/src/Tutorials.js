@@ -44,6 +44,11 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
     }
   };
 
+  const authHeaders = () => {
+    const token = localStorage.getItem('adminToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -104,6 +109,9 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
 
         const uploadRes = await fetch('https://oyushop-1.onrender.com/api/upload/video', {
           method: 'POST',
+          headers: {
+            ...authHeaders()
+          },
           body: fd
         });
 
@@ -126,7 +134,7 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
     try {
       const res = await fetch('https://oyushop-1.onrender.com/api/tutorials', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
@@ -156,7 +164,10 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
 
     try {
       const res = await fetch(`https://oyushop-1.onrender.com/api/tutorials/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          ...authHeaders()
+        }
       });
 
       if (res.ok) {

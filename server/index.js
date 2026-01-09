@@ -152,6 +152,14 @@ const ADMIN_CREDENTIALS = {
   username: process.env.ADMIN_USERNAME || 'admin',
   password: process.env.ADMIN_PASSWORD || '99752020'
 };
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'admin-token-12345';
+
+// Simple admin auth middleware (Bearer <token>)
+const requireAdmin = (req, res, next) => {
+  const auth = req.headers.authorization || '';
+  if (auth === `Bearer ${ADMIN_TOKEN}`) return next();
+  return res.status(401).json({ success: false, message: 'Admin auth required' });
+};
 
 // Загварууд
 const ProductSchema = new mongoose.Schema({
@@ -390,7 +398,7 @@ app.post('/api/admin/login', (req, res) => {
   if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
     res.json({ 
       success: true, 
-      token: 'admin-token-12345',
+      token: ADMIN_TOKEN,
       message: 'Амжилттай нэвтэрлээ'
     });
   } else {
@@ -470,7 +478,7 @@ app.post('/api/orders', async (req, res) => {
 });
 
 // API: Бүх захиалгууд авах (админ)
-app.get('/api/orders', async (req, res) => {
+app.get('/api/orders', requireAdmin, async (req, res) => {
   if (isMongoConnected) {
     try {
       const dbOrders = await Order.find().sort({ _id: -1 });
@@ -484,7 +492,7 @@ app.get('/api/orders', async (req, res) => {
 });
 
 // API: Захиалгын дэлгэрэнгүй
-app.get('/api/orders/:id', async (req, res) => {
+app.get('/api/orders/:id', requireAdmin, async (req, res) => {
   if (isMongoConnected) {
     try {
       const order = await Order.findById(req.params.id);
@@ -505,7 +513,7 @@ app.get('/api/orders/:id', async (req, res) => {
 });
 
 // API: Захиалга устгах (админ)
-app.delete('/api/orders/:id', async (req, res) => {
+app.delete('/api/orders/:id', requireAdmin, async (req, res) => {
   if (isMongoConnected) {
     try {
       const result = await Order.findByIdAndDelete(req.params.id);
@@ -527,7 +535,7 @@ app.delete('/api/orders/:id', async (req, res) => {
 });
 
 // API: Захиалгын статус шинэчлэх (админ)
-app.patch('/api/orders/:id/status', async (req, res) => {
+app.patch('/api/orders/:id/status', requireAdmin, async (req, res) => {
   const { status } = req.body;
   
   if (isMongoConnected) {

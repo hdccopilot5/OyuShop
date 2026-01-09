@@ -58,9 +58,18 @@ function OrdersView() {
     return () => clearInterval(interval);
   }, []);
 
+  const authHeaders = () => {
+    const token = localStorage.getItem('adminToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const fetchOrders = async () => {
     try {
-      const response = await fetch('https://oyushop-1.onrender.com/api/orders');
+      const response = await fetch('https://oyushop-1.onrender.com/api/orders', {
+        headers: {
+          ...authHeaders()
+        }
+      });
       const data = await response.json();
       setOrders(data);
     } catch (err) {
@@ -83,7 +92,10 @@ function OrdersView() {
 
     try {
       const response = await fetch(`https://oyushop-1.onrender.com/api/orders/${orderId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          ...authHeaders()
+        }
       });
 
       if (response.ok) {
@@ -99,7 +111,7 @@ function OrdersView() {
     try {
       const response = await fetch(`https://oyushop-1.onrender.com/api/orders/${orderId}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ status })
       });
 
