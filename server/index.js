@@ -64,7 +64,7 @@ app.post('/api/upload/video', upload.single('video'), async (req, res) => {
         console.log('❌ Cloudinary upload error:', e.message);
         console.log('Error details:', e);
         try { fs.unlinkSync(req.file.path); } catch {}
-        return res.status(500).json({ success: false, message: 'Cloudinary upload алдаа' });
+        return res.status(500).json({ success: false, message: `Cloudinary алдаа: ${e.message || 'upload'} ` });
       }
     }
 
@@ -79,7 +79,7 @@ app.post('/api/upload/video', upload.single('video'), async (req, res) => {
     const absoluteUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     res.json({ success: true, url: absoluteUrl, cloudinary: false });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Видео илгээхэд алдаа гарлаа' });
+    res.status(500).json({ success: false, message: `Видео илгээхэд алдаа: ${err.message || ''}` });
   }
 });
 
