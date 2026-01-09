@@ -332,6 +332,23 @@ let promoMocks = [
   { _id: 'p2', code: '5000OFF', type: 'flat', amount: 5000, active: true, usageLimit: 100, usedCount: 0 }
 ];
 
+// Debug endpoint - database шалгах
+app.get('/api/debug/db', async (req, res) => {
+  try {
+    const count = await Product.countDocuments();
+    const products = await Product.find({}).limit(5);
+    res.json({
+      mongoConnected: isMongoConnected,
+      totalProducts: count,
+      sampleProducts: products,
+      dbName: mongoose.connection.name,
+      dbHost: mongoose.connection.host
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, mongoConnected: isMongoConnected });
+  }
+});
+
 // API: Хүүхдийн болон төрсөн эхийн барааны жагсаалт
 app.get('/api/products', async (req, res) => {
   const { category } = req.query;
