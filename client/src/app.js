@@ -9,7 +9,8 @@ import Tutorials from "./Tutorials";
 // Shop page component
 function ShopPage({ 
   products, category, loading, cartItems, 
-  setCategory, addToCart, increaseQuantity, decreaseQuantity, handleCheckout, toggleDarkMode, darkMode
+  setCategory, addToCart, increaseQuantity, decreaseQuantity, handleCheckout, toggleDarkMode, darkMode,
+  searchQuery, setSearchQuery, priceFilter, setPriceFilter, toggleWishlist, isInWishlist, wishlist
 }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState({});
   const [zoomImage, setZoomImage] = useState(null);
@@ -43,6 +44,20 @@ function ShopPage({
     const index = selectedImageIndex[product._id] || 0;
     return allImages[index] || product.image;
   };
+
+  // Filter products by search, category, and price
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (p.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesPrice = priceFilter === 'all' ||
+      (priceFilter === 'under10k' && p.price < 10000) ||
+      (priceFilter === '10k-20k' && p.price >= 10000 && p.price < 20000) ||
+      (priceFilter === '20k-50k' && p.price >= 20000 && p.price < 50000) ||
+      (priceFilter === 'over50k' && p.price >= 50000);
+
+    return matchesSearch && matchesPrice;
+  });
 
   return (
     <div className="app-container">
@@ -91,8 +106,38 @@ function ShopPage({
             <option value="moms">👩 Төрсөн эхийн бараа</option>
           </select>
 
+          <label className="filter-label">Үнэ:</label>
+          <select 
+            className="filter-select" 
+            onChange={e => setPriceFilter(e.target.value)} 
+            value={priceFilter}
+          >
+            <option value="all">💰 Бүх үнэ</option>
+            <option value="under10k">💵 10,000₮ хүртэл</option>
+            <option value="10k-20k">💵 10,000₮ - 20,000₮</option>
+            <option value="20k-50k">💵 20,000₮ - 50,000₮</option>
+            <option value="over50k">💵 50,000₮+</option>
+          </select>
+
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="🔍 Бараа хайх..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
+
           <div className="header-buttons">
             <Link to="/tutorials" className="checkout-btn" style={{textDecoration: 'none'}}>🎬 Заавар</Link>
+            <button 
+              onClick={() => alert(`Дуртай бараа: ${wishlist.length}`)}
+              className="checkout-btn"
+              title="Дуртай бараа"
+            >
+              ❤️ ({wishlist.length})
+            </button>
             <button 
               onClick={handleCheckout}
               className={`checkout-btn ${cartItems.length === 0 ? 'disabled' : ''}`}
@@ -103,18 +148,34 @@ function ShopPage({
             <button onClick={toggleDarkMode} className="dark-mode-toggle" title={darkMode ? 'Цагаан өнгө' : 'Хар өнгө'}>
               {darkMode ? '☀️' : '🌙'}
             </button>
+            <a 
+              href="https://m.me/61575911835307" 
+              target="_blank" 
+              rel="noreferrer"
+              className="messenger-btn"
+              title="Messenger холбоо"
+            >
+              💬
+            </a>
           </div>
         </div>
 
         {loading && <p className="loading">Ачаалж байна...</p>}
 
-        {!loading && products.length === 0 && (
-          <p className="no-products">Энэ ангиллд бараа байхгүй байна</p>
+        {!loading && filteredProducts.length === 0 && (
+          <p className="no-products">{searchQuery || priceFilter !== 'all' ? 'Хайлтад тохирох бараа олдсонгүй' : 'Энэ ангиллд бараа байхгүй байна'}</p>
         )}
 
         <div className="products-grid">
-          {products.map((p) => (
+          {filteredProducts.map((p) => (
             <div key={p._id || Math.random()} className="product-card">
+              <button 
+                className={`wishlist-btn ${isInWishlist(p._id) ? 'active' : ''}`}
+                onClick={() => toggleWishlist(p)}
+                title={isInWishlist(p._id) ? 'Дуртайгаас хасах' : 'Дуртайд нэмэх'}
+              >
+                {isInWishlist(p._id) ? '❤️' : '🤍'}
+              </button>
               <div className="product-image-wrapper">
                 {getCurrentImage(p) ? (
                   <img 
@@ -187,6 +248,9 @@ function App() {
   const [cartItems, setCartItems] = useState([]);
   const [isCheckout, setIsCheckout] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [wishlist, setWishlist] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -199,6 +263,9 @@ function App() {
     if (savedDarkMode) {
       document.body.classList.add('dark-mode');
     }
+    // Load wishlist
+    const savedWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+    setWishlist(savedWishlist);
   }, []);
 
   useEffect(() => {
@@ -290,6 +357,22 @@ function App() {
     }
   };
 
+  const toggleWishlist = (product) => {
+    const isInWishlist = wishlist.some(item => item._id === product._id);
+    let newWishlist;
+    if (isInWishlist) {
+      newWishlist = wishlist.filter(item => item._id !== product._id);
+    } else {
+      newWishlist = [...wishlist, product];
+    }
+    setWishlist(newWishlist);
+    localStorage.setItem('wishlist', JSON.stringify(newWishlist));
+  };
+
+  const isInWishlist = (productId) => {
+    return wishlist.some(item => item._id === productId);
+  };
+
   return (
     <Routes>
       <Route 
@@ -307,6 +390,13 @@ function App() {
             handleCheckout={handleCheckout}
             toggleDarkMode={toggleDarkMode}
             darkMode={darkMode}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            priceFilter={priceFilter}
+            setPriceFilter={setPriceFilter}
+            toggleWishlist={toggleWishlist}
+            isInWishlist={isInWishlist}
+            wishlist={wishlist}
           />
         }
       />
