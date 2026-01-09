@@ -63,13 +63,18 @@ app.post('/api/upload/video', upload.single('video'), async (req, res) => {
       } catch (e) {
         console.log('❌ Cloudinary upload error:', e.message);
         console.log('Error details:', e);
-        // Fallback to serving local file if Cloudinary fails
-        const absoluteUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-        return res.json({ success: true, url: absoluteUrl, cloudinary: false });
+        try { fs.unlinkSync(req.file.path); } catch {}
+        return res.status(500).json({ success: false, message: 'Cloudinary upload алдаа' });
       }
     }
 
-    // Cloudinary disabled: serve local file URL
+    // Cloudinary disabled or not allowed: only use local if explicitly enabled
+    if (!ALLOW_LOCAL_UPLOADS) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+      console.log('⛔ Local upload disabled. Set ALLOW_LOCAL_UPLOADS=true if you want local fallback.');
+      return res.status(500).json({ success: false, message: 'Cloudinary идэвхгүй эсвэл амжилтгүй. Local upload идэвхгүй.' });
+    }
+
     console.log('⚠️ Cloudinary disabled, using local file');
     const absoluteUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     res.json({ success: true, url: absoluteUrl, cloudinary: false });
@@ -107,6 +112,7 @@ app.post('/api/upload/video/presign', async (req, res) => {
 // Feature flags / Environment-based config
 const GPT5_ENABLED = String(process.env.GPT5_ENABLED ?? 'true').toLowerCase() === 'true';
 const CLOUDINARY_ENABLED = String(process.env.CLOUDINARY_ENABLED ?? 'true').toLowerCase() === 'true';
+const ALLOW_LOCAL_UPLOADS = String(process.env.ALLOW_LOCAL_UPLOADS ?? 'false').toLowerCase() === 'true';
 
 // Cloudinary config
 if (CLOUDINARY_ENABLED) {
