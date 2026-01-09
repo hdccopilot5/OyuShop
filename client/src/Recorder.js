@@ -72,17 +72,20 @@ function Recorder({ onUploaded }) {
 
   const startRecording = () => {
     if (!stream || !window.MediaRecorder || !mimeType) return;
+    const recordedChunks = [];
     const mr = new MediaRecorder(stream, { mimeType });
     mediaRecorderRef.current = mr;
     setChunks([]);
     setFileBlob(null);
+    setError('');
     mr.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) {
+        recordedChunks.push(e.data);
         setChunks(prev => [...prev, e.data]);
       }
     };
     mr.onstop = () => {
-      const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
+      const blob = new Blob(recordedChunks, { type: mimeType || 'video/webm' });
       const url = URL.createObjectURL(blob);
       setPreviewUrl(url);
       setFileBlob(blob);
@@ -100,8 +103,12 @@ function Recorder({ onUploaded }) {
 
   const uploadVideo = async () => {
     const blobToSend = fileBlob || (chunks.length ? new Blob(chunks, { type: mimeType || 'video/webm' }) : null);
-    if (!blobToSend) return;
+    if (!blobToSend) {
+      setError('Видео бичлэг эсвэл файл байхгүй');
+      return;
+    }
     setUploading(true);
+    setError('');
     try {
       const ext = (mimeType && mimeType.includes('mp4')) ? 'mp4' : 'webm';
       const filename = `recording-${Date.now()}.${ext}`;
@@ -110,12 +117,14 @@ function Recorder({ onUploaded }) {
       const res = await fetch('https://oyushop-1.onrender.com/api/upload/video', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.success && data.url) {
+        setError('');
         onUploaded && onUploaded(data.url);
       } else {
-        setError('Видео илгээхэд алдаа гарлаа');
+        setError(data.message || 'Видео илгээхэд алдаа гарлаа');
       }
     } catch (e) {
-      setError('Видео илгээхэд алдаа гарлаа');
+      console.error('Upload error:', e);
+      setError(`Видео илгээхэд алдаа: ${e.message}`);
     } finally {
       setUploading(false);
     }
