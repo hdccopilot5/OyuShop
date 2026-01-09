@@ -193,7 +193,7 @@ function App() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`https://oyushop.onrender.com/api/products${category ? '?category=' + category : ''}`)
+    fetch(`https://oyushop-1.onrender.com/api/products${category ? '?category=' + category : ''}`)
       .then(res => res.json())
       .then(data => {
         setProducts(data || []);

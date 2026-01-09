@@ -64,7 +64,7 @@ function AdminPanel({ onLogout }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('https://oyushop.onrender.com/api/config');
+        const res = await fetch('https://oyushop-1.onrender.com/api/config');
         const data = await res.json();
         setConfig({ cloudinaryEnabled: !!data.cloudinaryEnabled });
       } catch {}
@@ -86,7 +86,7 @@ function AdminPanel({ onLogout }) {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('https://oyushop.onrender.com/api/products');
+      const response = await fetch('https://oyushop-1.onrender.com/api/products');
       const data = await response.json();
       setProducts(data);
     } catch (err) {
@@ -96,7 +96,7 @@ function AdminPanel({ onLogout }) {
 
   const fetchInventoryLogs = async () => {
     try {
-      const response = await fetch('https://oyushop.onrender.com/api/inventory-logs');
+      const response = await fetch('https://oyushop-1.onrender.com/api/inventory-logs');
       const data = await response.json();
       setInventoryLogs(data);
     } catch (err) {
@@ -106,7 +106,7 @@ function AdminPanel({ onLogout }) {
 
   const fetchTutorials = async () => {
     try {
-      const res = await fetch('https://oyushop.onrender.com/api/tutorials');
+      const res = await fetch('https://oyushop-1.onrender.com/api/tutorials');
       const data = await res.json();
       setTutorials(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -309,8 +309,8 @@ function AdminPanel({ onLogout }) {
     
     try {
       const url = editingLogId 
-        ? `https://oyushop.onrender.com/api/inventory-logs/${editingLogId}`
-        : 'https://oyushop.onrender.com/api/inventory-logs';
+        ? `https://oyushop-1.onrender.com/api/inventory-logs/${editingLogId}`
+        : 'https://oyushop-1.onrender.com/api/inventory-logs';
       
       const method = editingLogId ? 'PUT' : 'POST';
       
@@ -388,7 +388,7 @@ function AdminPanel({ onLogout }) {
     if (!window.confirm('Энэ бүртгэлийг устгах уу?')) return;
 
     try {
-      const response = await fetch(`https://oyushop.onrender.com/api/inventory-logs/${id}`, {
+      const response = await fetch(`https://oyushop-1.onrender.com/api/inventory-logs/${id}`, {
         method: 'DELETE'
       });
 
@@ -403,7 +403,7 @@ function AdminPanel({ onLogout }) {
 
   const handleExportCSV = async () => {
     try {
-      const response = await fetch('https://oyushop.onrender.com/api/inventory-logs/export/csv');
+      const response = await fetch('https://oyushop-1.onrender.com/api/inventory-logs/export/csv');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -437,7 +437,7 @@ function AdminPanel({ onLogout }) {
 
       if (editingId) {
         // Засах
-        const response = await fetch(`https://oyushop.onrender.com/api/products/${editingId}`, {
+        const response = await fetch(`https://oyushop-1.onrender.com/api/products/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(submitData)
@@ -456,7 +456,7 @@ function AdminPanel({ onLogout }) {
         }
       } else {
         // Нэмэх
-        const response = await fetch('https://oyushop.onrender.com/api/products', {
+        const response = await fetch('https://oyushop-1.onrender.com/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(submitData)
@@ -486,7 +486,7 @@ function AdminPanel({ onLogout }) {
   const handleDelete = async (id) => {
     if (window.confirm('Энэ барааг устгахыг хүсч байна уу?')) {
       try {
-        const response = await fetch(`https://oyushop.onrender.com/api/products/${id}`, {
+        const response = await fetch(`https://oyushop-1.onrender.com/api/products/${id}`, {
           method: 'DELETE'
         });
 
@@ -507,7 +507,7 @@ function AdminPanel({ onLogout }) {
     const newStock = Math.max(0, (product.stock || 0) + change);
     
     try {
-      const response = await fetch(`https://oyushop.onrender.com/api/products/${id}`, {
+      const response = await fetch(`https://oyushop-1.onrender.com/api/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...product, stock: newStock })
@@ -571,7 +571,7 @@ function AdminPanel({ onLogout }) {
     try {
       const fd = new FormData();
       fd.append('video', tutorialVideoFile);
-      const up = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
+      const up = await fetch('https://oyushop-1.onrender.com/api/upload/video', { method: 'POST', body: fd });
       const upData = await up.json();
       if (!upData.success || !upData.url) throw new Error('upload failed');
       const videoUrl = upData.url;
@@ -583,7 +583,7 @@ function AdminPanel({ onLogout }) {
 
   const saveTutorialToServer = async (videoUrl) => {
     try {
-      const res = await fetch('https://oyushop.onrender.com/api/tutorials', {
+      const res = await fetch('https://oyushop-1.onrender.com/api/tutorials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: tutorialForm.title, description: tutorialForm.description, videoUrl })
@@ -611,7 +611,7 @@ function AdminPanel({ onLogout }) {
   const handleDeleteTutorial = async (id) => {
     if (!window.confirm('Энэ бичлэгийг устгах уу?')) return;
     try {
-      const res = await fetch(`https://oyushop.onrender.com/api/tutorials/${id}`, { method: 'DELETE' });
+      const res = await fetch(`https://oyushop-1.onrender.com/api/tutorials/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setMessage('✅ Устгагдлаа');
         setEditingLogId(null);

@@ -21,7 +21,7 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
 
   const fetchConfig = async () => {
     try {
-      const res = await fetch('https://oyushop.onrender.com/api/config');
+      const res = await fetch('https://oyushop-1.onrender.com/api/config');
       const data = await res.json();
       setConfig({ cloudinaryEnabled: !!data.cloudinaryEnabled });
     } catch (err) {
@@ -32,7 +32,7 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
   const fetchTutorials = async () => {
     try {
       setLoading(true);
-      const res = await fetch('https://oyushop.onrender.com/api/tutorials');
+      const res = await fetch('https://oyushop-1.onrender.com/api/tutorials');
       const data = await res.json();
       console.log('Tutorials loaded:', data);
       setTutorials(Array.isArray(data) ? data : []);
@@ -102,7 +102,7 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
         const fd = new FormData();
         fd.append('video', videoFile);
 
-        const uploadRes = await fetch('https://oyushop.onrender.com/api/upload/video', {
+        const uploadRes = await fetch('https://oyushop-1.onrender.com/api/upload/video', {
           method: 'POST',
           body: fd
         });
@@ -124,7 +124,7 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
 
   const saveTutorialToServer = async (videoUrl) => {
     try {
-      const res = await fetch('https://oyushop.onrender.com/api/tutorials', {
+      const res = await fetch('https://oyushop-1.onrender.com/api/tutorials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -155,7 +155,7 @@ function Tutorials({ isAdmin = false, onEdit = null }) {
     if (!window.confirm('Энэ бичлэгийг устгах уу?')) return;
 
     try {
-      const res = await fetch(`https://oyushop.onrender.com/api/tutorials/${id}`, {
+      const res = await fetch(`https://oyushop-1.onrender.com/api/tutorials/${id}`, {
         method: 'DELETE'
       });
 

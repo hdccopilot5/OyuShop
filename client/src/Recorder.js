@@ -33,7 +33,7 @@ function Recorder({ onUploaded }) {
     // Load server config for upload strategy
     (async () => {
       try {
-        const res = await fetch('https://oyushop.onrender.com/api/config');
+        const res = await fetch('https://oyushop-1.onrender.com/api/config');
         const data = await res.json();
         setConfig({ cloudinaryEnabled: !!data.cloudinaryEnabled });
       } catch {}
@@ -107,7 +107,7 @@ function Recorder({ onUploaded }) {
       const filename = `recording-${Date.now()}.${ext}`;
       const fd = new FormData();
       fd.append('video', blobToSend, filename);
-      const res = await fetch('https://oyushop.onrender.com/api/upload/video', { method: 'POST', body: fd });
+      const res = await fetch('https://oyushop-1.onrender.com/api/upload/video', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.success && data.url) {
         onUploaded && onUploaded(data.url);
