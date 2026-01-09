@@ -33,7 +33,13 @@ const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (req, file, cb) => {
-    if ((file.mimetype || '').startsWith('video/')) cb(null, true);
+    const mimetype = (file.mimetype || '').toLowerCase();
+    const name = (file.originalname || '').toLowerCase();
+    const looksLikeVideo = mimetype.startsWith('video/')
+      || mimetype === 'application/octet-stream' // iOS Safari sometimes sends octet-stream
+      || mimetype === 'video/quicktime';
+    const extVideo = name.endsWith('.mp4') || name.endsWith('.mov') || name.endsWith('.webm') || name.endsWith('.m4v');
+    if (looksLikeVideo || extVideo) cb(null, true);
     else cb(new Error('Зөвхөн видео файл байж болно'));
   }
 });
