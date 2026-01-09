@@ -116,6 +116,11 @@ app.get('/api/config', (req, res) => {
   res.json({ gpt5Enabled: GPT5_ENABLED, cloudinaryEnabled: CLOUDINARY_ENABLED });
 });
 
+// Health check endpoint - keep-alive-д ашиглана
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Админ наамтарт (environment variable-аас авна)
 const ADMIN_CREDENTIALS = {
   username: process.env.ADMIN_USERNAME || 'admin',
@@ -778,6 +783,7 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Сервер ${PORT} портоор асав`);
   console.log(`👨‍💼 Админ нэвтрэх: username=${ADMIN_CREDENTIALS.username}`);
+  console.log('💡 Хурд нэмэгдүүлэх заавар: https://cron-job.org дээр 14 минут тутамд /api/health руу GET request үүсгэ');
 });
 
 // API: Заавар бичлэгүүд
