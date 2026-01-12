@@ -366,18 +366,25 @@ app.get('/api/products', async (req, res) => {
       }
       
       console.log('📊 Query filter:', JSON.stringify(filter));
-      const products = await Product.find(filter).sort({ orderIndex: 1, name: 1 });
+      
+      // Set a timeout for the query
+      const query = Product.find(filter).sort({ orderIndex: 1, name: 1 });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Query timeout after 5s')), 5000)
+      );
+      
+      const products = await Promise.race([query.exec(), timeoutPromise]);
       console.log('✅ MongoDB-с бараа олсон:', products.length);
       
       return res.json(products);
     } catch (err) {
-      console.log('❌ MongoDB query алдаа:', err.message);
-      return res.status(500).json({ error: 'Database query failed', message: err.message });
+      console.log('⚠️ MongoDB query алдаа (fallback to mock):', err.message);
+      // On timeout or query error, fall through to mock data
     }
   }
   
-  // MongoDB холбогдоогүй бол mock өгөгдөл буцаах
-  console.log('⚠️ MongoDB холбогдоогүй - mock data буцааж байна');
+  // MongoDB холбогдоогүй эсвэл query алдаа бол mock өгөгдөл буцаах
+  console.log('⚠️ Mock data буцааж байна');
   let products = mockProducts;
   if (category) {
     products = products.filter(p => p.category === category);
@@ -1100,8 +1107,13 @@ if (!MONGODB_URI) {
     .connect(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 10000, // Increased from 5000
+      socketTimeoutMS: 60000, // Increased from 45000
+      maxPoolSize: 10,
+      minPoolSize: 5,
+      connectTimeoutMS: 10000,
+      retryWrites: true,
+      retryReads: true,
     })
     .then(() => {
       isMongoConnected = true;
