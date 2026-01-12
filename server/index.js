@@ -391,6 +391,21 @@ app.get('/api/products', async (req, res) => {
       return res.json(products);
     } catch (err) {
       console.log('⚠️ MongoDB query алдаа:', err.message);
+      // One quick retry without node-side Promise.race guard
+      try {
+        const products2 = await Product
+          .find(filter)
+          .select('name description price category image stock orderIndex')
+          .sort({ orderIndex: 1, name: 1 })
+          .lean()
+          .maxTimeMS(20000) // allow a bit longer on retry
+          .exec();
+        console.log('🔁 Retry success, items:', products2.length);
+        productsCache = { items: products2, ts: Date.now() };
+        return res.json(products2);
+      } catch (e2) {
+        console.log('❌ Retry failed:', e2.message);
+      }
       // If we have recent cache, serve it
       if (productsCache.items && productsCache.items.length > 0) {
         const age = Date.now() - productsCache.ts;
