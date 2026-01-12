@@ -725,9 +725,10 @@ app.get('/api/orders/export/csv', requireAdmin, async (req, res) => {
     });
 
     const csv = [header.join(','), ...rows].join('\n');
-    res.setHeader('Content-Type', 'text/csv');
+    const bom = '\uFEFF'; // UTF-8 BOM for proper character encoding in Excel
+    res.setHeader('Content-Type', 'text/csv;charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="orders.csv"');
-    return res.send(csv);
+    return res.send(bom + csv);
   } catch (e) {
     console.log('CSV export error:', e.message);
     res.status(500).send('CSV export failed');
