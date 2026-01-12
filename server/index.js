@@ -198,6 +198,10 @@ const OrderSchema = new mongoose.Schema({
 
 const Order = mongoose.model('Order', OrderSchema);
 
+// In-memory cache for products to survive intermittent DB timeouts
+let productsCache = { items: [], ts: 0 };
+const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+
 const InventoryLogSchema = new mongoose.Schema({
   productCode: String,
   productName: String,
@@ -367,23 +371,37 @@ app.get('/api/products', async (req, res) => {
       
       console.log('📊 Query filter:', JSON.stringify(filter));
       
-      // Set a timeout for the query
-      const query = Product.find(filter).sort({ orderIndex: 1, name: 1 });
+      // Optimized query: lean docs + projection + maxTimeMS
+      const query = Product
+        .find(filter)
+        .select('name description price category image stock orderIndex')
+        .sort({ orderIndex: 1, name: 1 })
+        .lean()
+        .maxTimeMS(12000); // 12s query ceiling
+
+      // Set a hard timeout guard as well (node-side)
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Query timeout after 5s')), 5000)
+        setTimeout(() => reject(new Error('Query timeout after 12s')), 12000)
       );
       
       const products = await Promise.race([query.exec(), timeoutPromise]);
       console.log('✅ MongoDB-с бараа олсон:', products.length);
+      productsCache = { items: products, ts: Date.now() };
       
       return res.json(products);
     } catch (err) {
-      console.log('⚠️ MongoDB query алдаа (fallback to mock):', err.message);
-      // On timeout or query error, fall through to mock data
+      console.log('⚠️ MongoDB query алдаа:', err.message);
+      // If we have recent cache, serve it
+      if (productsCache.items && productsCache.items.length > 0) {
+        const age = Date.now() - productsCache.ts;
+        console.log(`🧠 Cache ашиглав (age ${age}ms, ttl ${CACHE_TTL_MS}ms)`);
+        return res.json(productsCache.items);
+      }
+      console.log('⚠️ Cache хоосон - mock data буцаая');
     }
   }
   
-  // MongoDB холбогдоогүй эсвэл query алдаа бол mock өгөгдөл буцаах
+  // MongoDB холбогдоогүй эсвэл query/connection алдаа: mock өгөгдөл буцаах
   console.log('⚠️ Mock data буцааж байна');
   let products = mockProducts;
   if (category) {
