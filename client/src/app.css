@@ -249,23 +249,44 @@ body.dark-mode .skeleton-button {
 
 .phone-list {
   display: inline-flex;
-  gap: 8px;
+  gap: 12px;
   align-items: center;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.18);
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(220, 38, 38, 0.95) 100%);
   color: white;
-  border-radius: 10px;
+  border-radius: 12px;
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transition: all 0.3s ease;
+}
+
+.phone-list:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.phone-label {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
 }
 
 .phone-number {
   color: white;
   text-decoration: none;
+  font-weight: 700;
+  transition: all 0.3s ease;
 }
 
 .phone-number:hover {
-  text-decoration: underline;
+  opacity: 0.9;
+  text-decoration: none;
+}
+
+.phone-dot {
+  opacity: 0.6;
+  font-size: 1.2rem;
 }
 
 .phone-dot {
