@@ -356,14 +356,18 @@ app.get('/api/debug/db', async (req, res) => {
 // API: Хүүхдийн болон төрсөн эхийн барааны жагсаалт
 app.get('/api/products', async (req, res) => {
   const { category } = req.query;
-  const lowStockThreshold = req.query.lowStock ? Number(req.query.lowStock) : undefined;
+  // Parse lowStock more carefully to avoid 0 or invalid values
+  const lowStockThreshold = (req.query.lowStock && req.query.lowStock !== '') 
+    ? Number(req.query.lowStock) 
+    : undefined;
   
   console.log('🔍 GET /api/products - MongoDB холболт:', isMongoConnected);
   
   // Build filter outside try/catch so it is available for retry
   let filter = {};
   if (category) filter.category = category;
-  if (lowStockThreshold !== undefined && !isNaN(lowStockThreshold) && lowStockThreshold !== null) {
+  // Only add stock filter if it's a positive number
+  if (lowStockThreshold !== undefined && !isNaN(lowStockThreshold) && lowStockThreshold > 0) {
     filter.stock = { $lt: lowStockThreshold };
   }
   
