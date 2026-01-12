@@ -381,11 +381,11 @@ app.get('/api/products', async (req, res) => {
         .select('name description price category image stock orderIndex')
         .sort({ orderIndex: 1, name: 1 })
         .lean()
-        .maxTimeMS(12000); // 12s query ceiling
+        .maxTimeMS(30000); // 30s for slow Render↔Atlas connection
 
       // Set a hard timeout guard as well (node-side)
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Query timeout after 12s')), 12000)
+        setTimeout(() => reject(new Error('Query timeout after 30s')), 30000)
       );
       
       const products = await Promise.race([query.exec(), timeoutPromise]);
@@ -402,7 +402,7 @@ app.get('/api/products', async (req, res) => {
           .select('name description price category image stock orderIndex')
           .sort({ orderIndex: 1, name: 1 })
           .lean()
-          .maxTimeMS(20000) // allow a bit longer on retry
+          .maxTimeMS(45000) // allow even longer on retry
           .exec();
         console.log('🔁 Retry success, items:', products2.length);
         productsCache = { items: products2, ts: Date.now() };
@@ -1143,11 +1143,11 @@ if (!MONGODB_URI) {
     .connect(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000, // Increased from 5000
-      socketTimeoutMS: 60000, // Increased from 45000
-      maxPoolSize: 10,
-      minPoolSize: 5,
-      connectTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 30000, // Increased for Render free tier
+      socketTimeoutMS: 75000,
+      maxPoolSize: 5, // Reduced to avoid connection overload
+      minPoolSize: 1,
+      connectTimeoutMS: 30000,
       retryWrites: true,
       retryReads: true,
     })
