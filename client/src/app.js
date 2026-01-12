@@ -190,13 +190,6 @@ function ShopPage({
         <div className="products-grid">
           {filteredProducts.map((p) => (
             <div key={p._id || Math.random()} className="product-card">
-              <button 
-                className={`wishlist-btn ${isInWishlist(p._id) ? 'active' : ''}`}
-                onClick={() => toggleWishlist(p)}
-                title={isInWishlist(p._id) ? 'Дуртайгаас хасах' : 'Дуртайд нэмэх'}
-              >
-                {isInWishlist(p._id) ? '❤️' : '🤍'}
-              </button>
               <div className="product-image-wrapper">
                 {getCurrentImage(p) ? (
                   <img 
