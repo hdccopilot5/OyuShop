@@ -352,7 +352,7 @@ app.get('/api/debug/db', async (req, res) => {
 // API: Хүүхдийн болон төрсөн эхийн барааны жагсаалт
 app.get('/api/products', async (req, res) => {
   const { category } = req.query;
-  const lowStockThreshold = req.query.lowStock ? Number(req.query.lowStock) : null;
+  const lowStockThreshold = req.query.lowStock ? Number(req.query.lowStock) : undefined;
   
   console.log('🔍 GET /api/products - MongoDB холболт:', isMongoConnected);
   
@@ -360,7 +360,8 @@ app.get('/api/products', async (req, res) => {
     try {
       let filter = {};
       if (category) filter.category = category;
-      if (!isNaN(lowStockThreshold)) {
+      // Only add stock filter if lowStockThreshold is a valid number
+      if (lowStockThreshold !== undefined && !isNaN(lowStockThreshold) && lowStockThreshold !== null) {
         filter.stock = { $lt: lowStockThreshold };
       }
       
@@ -381,7 +382,7 @@ app.get('/api/products', async (req, res) => {
   if (category) {
     products = products.filter(p => p.category === category);
   }
-  if (!isNaN(lowStockThreshold)) {
+  if (lowStockThreshold !== undefined && !isNaN(lowStockThreshold) && lowStockThreshold !== null) {
     products = products.filter(p => (p.stock || 0) < lowStockThreshold);
   }
   res.json(products.sort((a,b) => (a.orderIndex||0) - (b.orderIndex||0)));
