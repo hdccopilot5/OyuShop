@@ -190,12 +190,24 @@ body.dark-mode .skeleton-button {
   margin-bottom: 10px;
   font-weight: 700;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  animation: glowPulse 3s ease-in-out infinite;
 }
 
 .subtitle {
   font-size: 1.1rem;
   opacity: 0.95;
   font-weight: 300;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    color: #1f2937;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    color: #667eea;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2), 0 0 10px rgba(102, 126, 234, 0.4);
+  }
 }
 
 .contact-row {
