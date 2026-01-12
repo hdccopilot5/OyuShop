@@ -54,7 +54,10 @@ function AdminPanel({ onLogout }) {
   const [statsLoading, setStatsLoading] = useState(false);
   const [topProducts, setTopProducts] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
-  const [lowStockThreshold, setLowStockThreshold] = useState(5);
+  const [lowStockThreshold, setLowStockThreshold] = useState(() => {
+    const saved = localStorage.getItem('lowStockThreshold');
+    return saved ? parseInt(saved) : 5;
+  });
   const [promos, setPromos] = useState([]);
   const [promoForm, setPromoForm] = useState({ code: '', type: 'percent', amount: '', usageLimit: '', expiresAt: '' });
   const [promoLoading, setPromoLoading] = useState(false);
@@ -112,6 +115,10 @@ function AdminPanel({ onLogout }) {
       fetchLowStock(false);
     }, 20000);
     return () => clearInterval(id);
+  }, [lowStockThreshold]);
+
+  useEffect(() => {
+    localStorage.setItem('lowStockThreshold', lowStockThreshold.toString());
   }, [lowStockThreshold]);
 
   const fetchStats = async (showSpinner = false) => {
@@ -1098,16 +1105,6 @@ function AdminPanel({ onLogout }) {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
               />
-              <span className="pill danger">⚠️ {lowStockProducts.length} бага үлдэгдэл</span>
-              <div className="bulk-box">
-                <input
-                  type="number"
-                  placeholder="%"
-                  value={bulkPercent}
-                  onChange={(e) => setBulkPercent(e.target.value)}
-                />
-                <button type="button" onClick={handleBulkPriceChange} className="bulk-btn">💸 Бүгдийг өөрчлөх</button>
-              </div>
               {reorderSaving && <span className="pill">Хадгалж байна...</span>}
               <button 
                 type="button"
