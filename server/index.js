@@ -360,15 +360,15 @@ app.get('/api/products', async (req, res) => {
   
   console.log('🔍 GET /api/products - MongoDB холболт:', isMongoConnected);
   
+  // Build filter outside try/catch so it is available for retry
+  let filter = {};
+  if (category) filter.category = category;
+  if (lowStockThreshold !== undefined && !isNaN(lowStockThreshold) && lowStockThreshold !== null) {
+    filter.stock = { $lt: lowStockThreshold };
+  }
+  
   if (isMongoConnected) {
     try {
-      let filter = {};
-      if (category) filter.category = category;
-      // Only add stock filter if lowStockThreshold is a valid number
-      if (lowStockThreshold !== undefined && !isNaN(lowStockThreshold) && lowStockThreshold !== null) {
-        filter.stock = { $lt: lowStockThreshold };
-      }
-      
       console.log('📊 Query filter:', JSON.stringify(filter));
       
       // Optimized query: lean docs + projection + maxTimeMS
