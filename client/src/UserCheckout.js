@@ -12,7 +12,6 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [promoValid, setPromoValid] = useState(false);
-  const [showPromo, setShowPromo] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -221,26 +220,17 @@ function UserCheckout({ cartItems, onOrderSuccess, onBack, onIncreaseQuantity, o
                 <p>Төлөх дүн: <strong>{finalPrice}₮</strong></p>
               </div>
             )}
-            <button
-              type="button"
-              className="promo-toggle"
-              onClick={() => setShowPromo(prev => !prev)}
-            >
-              {showPromo ? '— Хаах' : '🎟️ Урамшууллын код нээх'}
-            </button>
-            {showPromo && (
-              <div className="promo-box">
-                <input
-                  type="text"
-                  placeholder="Урамшууллын код"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                />
-                <button type="button" onClick={handlePromoCheck} className="promo-btn">
-                  {promoValid ? '✓' : '🎟️'} Шалгах
-                </button>
-              </div>
-            )}
+            <div className="promo-box">
+              <input
+                type="text"
+                placeholder="Урамшууллын код"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              />
+              <button type="button" onClick={handlePromoCheck} className="promo-btn">
+                {promoValid ? '✓' : '🎟️'} Шалгах
+              </button>
+            </div>
             <div className="delivery-info">
               <p>📦 Хүргэлт: <strong>5.000₮ - 8.000₮</strong></p>
               <p>🚐 Орон нутгийн унаанд тавьж өгнө</p>
