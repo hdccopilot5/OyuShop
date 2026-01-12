@@ -58,6 +58,7 @@ function AdminPanel({ onLogout }) {
   const [promos, setPromos] = useState([]);
   const [promoForm, setPromoForm] = useState({ code: '', type: 'percent', amount: '', usageLimit: '', expiresAt: '' });
   const [promoLoading, setPromoLoading] = useState(false);
+  const [showPromos, setShowPromos] = useState(true);
   const [reorderSaving, setReorderSaving] = useState(false);
   const [bulkPercent, setBulkPercent] = useState('');
   const dragIdRef = useRef(null);
@@ -1448,71 +1449,81 @@ function AdminPanel({ onLogout }) {
         <div className="section-header">
           <h2>🎟️ Урамшууллын код</h2>
           <small>{promos.length} код</small>
+          <button
+            type="button"
+            onClick={() => setShowPromos(!showPromos)}
+            className="toggle-inventory-btn"
+          >
+            {showPromos ? '▲ Хаах' : '▼ Нээх'}
+          </button>
         </div>
+        {showPromos && (
+          <>
+            <form className="promo-form" onSubmit={handleCreatePromo}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Код *</label>
+                  <input name="code" value={promoForm.code} onChange={handlePromoInput} placeholder="WELCOME10" required />
+                </div>
+                <div className="form-group">
+                  <label>Төрөл</label>
+                  <select name="type" value={promoForm.type} onChange={handlePromoInput}>
+                    <option value="percent">% хөнгөлөлт</option>
+                    <option value="flat">Тогтмол дүн</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Дүн *</label>
+                  <input type="number" name="amount" value={promoForm.amount} onChange={handlePromoInput} placeholder="10 эсвэл 5000" required />
+                </div>
+                <div className="form-group">
+                  <label>Хэрэглэх дээд тоо</label>
+                  <input type="number" name="usageLimit" value={promoForm.usageLimit} onChange={handlePromoInput} placeholder="0 = хязгааргүй" />
+                </div>
+                <div className="form-group">
+                  <label>Дуусах огноо</label>
+                  <input type="date" name="expiresAt" value={promoForm.expiresAt} onChange={handlePromoInput} />
+                </div>
+              </div>
+              <button type="submit" className="submit-btn" disabled={promoLoading}>{promoLoading ? 'Хүлээж байна...' : '➕ Код нэмэх'}</button>
+            </form>
 
-        <form className="promo-form" onSubmit={handleCreatePromo}>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Код *</label>
-              <input name="code" value={promoForm.code} onChange={handlePromoInput} placeholder="WELCOME10" required />
+            <div className="promo-list">
+              {promos.length === 0 ? (
+                <p className="muted">Код байхгүй байна</p>
+              ) : (
+                <table className="inventory-table">
+                  <thead>
+                    <tr>
+                      <th>Код</th>
+                      <th>Төрөл</th>
+                      <th>Дүн</th>
+                      <th>Ашигласан</th>
+                      <th>Хугацаа</th>
+                      <th>Үйлдэл</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {promos.map(p => (
+                      <tr key={p._id}>
+                        <td><strong>{p.code}</strong></td>
+                        <td>{p.type === 'flat' ? 'Тогтмол' : '%'} </td>
+                        <td>{p.amount}</td>
+                        <td>{p.usedCount || 0}/{p.usageLimit || '∞'}</td>
+                        <td>{p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('mn-MN') : '∞'}</td>
+                        <td>
+                          <button onClick={() => handleDeletePromo(p._id)} className="delete-btn" title="Устгах">🗑️</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
-            <div className="form-group">
-              <label>Төрөл</label>
-              <select name="type" value={promoForm.type} onChange={handlePromoInput}>
-                <option value="percent">% хөнгөлөлт</option>
-                <option value="flat">Тогтмол дүн</option>
-              </select>
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Дүн *</label>
-              <input type="number" name="amount" value={promoForm.amount} onChange={handlePromoInput} placeholder="10 эсвэл 5000" required />
-            </div>
-            <div className="form-group">
-              <label>Хэрэглэх дээд тоо</label>
-              <input type="number" name="usageLimit" value={promoForm.usageLimit} onChange={handlePromoInput} placeholder="0 = хязгааргүй" />
-            </div>
-            <div className="form-group">
-              <label>Дуусах огноо</label>
-              <input type="date" name="expiresAt" value={promoForm.expiresAt} onChange={handlePromoInput} />
-            </div>
-          </div>
-          <button type="submit" className="submit-btn" disabled={promoLoading}>{promoLoading ? 'Хүлээж байна...' : '➕ Код нэмэх'}</button>
-        </form>
-
-        <div className="promo-list">
-          {promos.length === 0 ? (
-            <p className="muted">Код байхгүй байна</p>
-          ) : (
-            <table className="inventory-table">
-              <thead>
-                <tr>
-                  <th>Код</th>
-                  <th>Төрөл</th>
-                  <th>Дүн</th>
-                  <th>Ашигласан</th>
-                  <th>Хугацаа</th>
-                  <th>Үйлдэл</th>
-                </tr>
-              </thead>
-              <tbody>
-                {promos.map(p => (
-                  <tr key={p._id}>
-                    <td><strong>{p.code}</strong></td>
-                    <td>{p.type === 'flat' ? 'Тогтмол' : '%'} </td>
-                    <td>{p.amount}</td>
-                    <td>{p.usedCount || 0}/{p.usageLimit || '∞'}</td>
-                    <td>{p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('mn-MN') : '∞'}</td>
-                    <td>
-                      <button onClick={() => handleDeletePromo(p._id)} className="delete-btn" title="Устгах">🗑️</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       <div className="admin-section">
