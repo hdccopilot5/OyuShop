@@ -397,20 +397,19 @@ app.get('/api/products', async (req, res) => {
         console.log(`🧠 Cache ашиглав (age ${age}ms, ttl ${CACHE_TTL_MS}ms)`);
         return res.json(productsCache.items);
       }
-      console.log('⚠️ Cache хоосон - mock data буцаая');
+      console.log('⛔ DB алдаа ба cache хоосон - хоосон жагсаалт буцаалаа');
+      return res.json([]);
     }
   }
   
-  // MongoDB холбогдоогүй эсвэл query/connection алдаа: mock өгөгдөл буцаах
-  console.log('⚠️ Mock data буцааж байна');
-  let products = mockProducts;
-  if (category) {
-    products = products.filter(p => p.category === category);
+  // MongoDB холбогдоогүй: cache байвал буцаана, эс бөгөөс хоосон
+  if (productsCache.items && productsCache.items.length > 0) {
+    const age = Date.now() - productsCache.ts;
+    console.log(`🧠 Cache (no DB) ашиглав (age ${age}ms)`);
+    return res.json(productsCache.items);
   }
-  if (lowStockThreshold !== undefined && !isNaN(lowStockThreshold) && lowStockThreshold !== null) {
-    products = products.filter(p => (p.stock || 0) < lowStockThreshold);
-  }
-  res.json(products.sort((a,b) => (a.orderIndex||0) - (b.orderIndex||0)));
+  console.log('⛔ DB холбогдоогүй ба cache хоосон - хоосон жагсаалт');
+  return res.json([]);
 });
 
 // API: Шинэ бараа нэмэх (админ)
@@ -1137,6 +1136,21 @@ if (!MONGODB_URI) {
       isMongoConnected = true;
       console.log('✅ MongoDB холбогдлоо!');
       console.log('📊 Connected to:', mongoose.connection.name, '@', mongoose.connection.host);
+      // Warm-up products cache to avoid mock fallback and cold starts
+      try {
+        Product.find({})
+          .select('name description price category image stock orderIndex')
+          .sort({ orderIndex: 1, name: 1 })
+          .lean()
+          .limit(200)
+          .then(items => {
+            productsCache = { items, ts: Date.now() };
+            console.log('🧠 Warmed products cache:', items.length);
+          })
+          .catch(e => console.log('⚠️ Warm-up query алдаа:', e.message));
+      } catch (e) {
+        console.log('⚠️ Warm-up гүйцэтгэхэд алдаа:', e.message);
+      }
     })
     .catch((err) => {
       console.log('⚠️ MongoDB холбогдоогүй. Mock өгөгдөл ашиглаж байна.');
