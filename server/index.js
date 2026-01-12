@@ -150,7 +150,7 @@ app.get('/api/health', (req, res) => {
 // Админ наамтарт (environment variable-аас авна)
 const ADMIN_CREDENTIALS = {
   username: process.env.ADMIN_USERNAME || 'admin',
-  password: process.env.ADMIN_PASSWORD || '99752020'
+  password: process.env.ADMIN_PASSWORD || '99752020$Myesu'
 };
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'admin-token-12345';
 
