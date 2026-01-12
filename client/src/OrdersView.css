@@ -115,6 +115,17 @@
   font-size: 1.1rem;
 }
 
+.promo-badge {
+  margin-top: 6px;
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px dashed #f59e0b;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
 .date {
   color: #666;
   font-size: 0.9rem;

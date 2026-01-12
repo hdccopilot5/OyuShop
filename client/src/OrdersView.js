@@ -254,7 +254,14 @@ function OrdersView() {
                       </small>
                     )}
                   </td>
-                  <td className="price">{order.totalPrice}₮</td>
+                  <td className="price">
+                    {order.totalPrice}₮
+                    {order.discountAmount > 0 && (
+                      <div className="promo-badge" title={`Код: ${order.promoCode || ''}`}>
+                        🎟️ −{order.discountAmount}₮ {order.promoCode ? `(${order.promoCode})` : ''}
+                      </div>
+                    )}
+                  </td>
                   <td className="date">{formatDateWithAbsolute(order.orderDate)}</td>
                   <td className="status">
                     <span className={`status-badge ${
@@ -337,6 +344,21 @@ function OrdersView() {
               <div className="detail-group">
                 <label>Захиалгын огноо:</label>
                 <p>{formatDateWithAbsolute(selectedOrder.orderDate)}</p>
+              </div>
+
+              <div className="detail-group">
+                <label>🎟️ Урамшууллын код:</label>
+                <p>{selectedOrder.promoCode || '(Ашиглаагүй)'}</p>
+              </div>
+
+              <div className="detail-group">
+                <label>Хөнгөлөлт:</label>
+                <p>{selectedOrder.discountAmount ? `-${selectedOrder.discountAmount}₮` : '0₮'}</p>
+              </div>
+
+              <div className="detail-group">
+                <label>Дүн (хөнгөлөлтөөс өмнө):</label>
+                <p>{selectedOrder.subtotal}₮</p>
               </div>
             </div>
 
