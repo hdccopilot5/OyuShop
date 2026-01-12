@@ -101,9 +101,9 @@ function ShopPage({
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Facebook хуудас"
+                  title="Facebook хуудас"
                 >
-                  <span className="social-icon" aria-hidden>📘</span>
-                  Facebook хуудас
+                  <img src="/facebook-logo.svg" alt="Facebook" className="social-icon-img" />
                 </a>
                 <div className="phone-list" aria-label="Холбогдох утас">
                   <span className="phone-label">📞</span>

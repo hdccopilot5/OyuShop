@@ -241,6 +241,12 @@ body.dark-mode .skeleton-button {
   font-size: 1.2rem;
 }
 
+.social-icon-img {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
 .phone-list {
   display: inline-flex;
   gap: 8px;
