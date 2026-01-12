@@ -416,18 +416,19 @@ body.dark-mode .search-input {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid #ddd;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #ff6b6b;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 1.3rem;
+  width: 44px;
+  height: 44px;
+  font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
 }
 
 .wishlist-btn:hover {
