@@ -156,13 +156,6 @@ function ShopPage({
           <div className="header-buttons">
             <Link to="/tutorials" className="checkout-btn" style={{textDecoration: 'none'}}>🎬 Заавар</Link>
             <button 
-              onClick={() => setShowWishlist(true)}
-              className="checkout-btn"
-              title="Дуртай бараа"
-            >
-              ❤️ ({wishlist.length})
-            </button>
-            <button 
               onClick={handleCheckout}
               className={`checkout-btn ${cartItems.length === 0 ? 'disabled' : ''}`}
               disabled={cartItems.length === 0}
