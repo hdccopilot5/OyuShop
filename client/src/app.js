@@ -166,7 +166,7 @@ function ShopPage({
               {darkMode ? '☀️' : '🌙'}
             </button>
             <a 
-              href="https://m.me/61575911835307" 
+              href="https://www.messenger.com/t/701484816372660" 
               target="_blank" 
               rel="noreferrer"
               className="messenger-btn"
