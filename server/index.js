@@ -354,6 +354,8 @@ app.get('/api/products', async (req, res) => {
   const { category } = req.query;
   const lowStockThreshold = req.query.lowStock ? Number(req.query.lowStock) : null;
   
+  console.log('🔍 GET /api/products - MongoDB холболт:', isMongoConnected);
+  
   if (isMongoConnected) {
     try {
       let filter = {};
@@ -361,14 +363,20 @@ app.get('/api/products', async (req, res) => {
       if (!isNaN(lowStockThreshold)) {
         filter.stock = { $lt: lowStockThreshold };
       }
+      
+      console.log('📊 Query filter:', JSON.stringify(filter));
       const products = await Product.find(filter).sort({ orderIndex: 1, name: 1 });
+      console.log('✅ MongoDB-с бараа олсон:', products.length);
+      
       return res.json(products);
     } catch (err) {
-      console.log('MongoDB асалтын алдаа:', err.message);
+      console.log('❌ MongoDB query алдаа:', err.message);
+      return res.status(500).json({ error: 'Database query failed', message: err.message });
     }
   }
   
-  // Mock өгөгдөл буцаах
+  // MongoDB холбогдоогүй бол mock өгөгдөл буцаах
+  console.log('⚠️ MongoDB холбогдоогүй - mock data буцааж байна');
   let products = mockProducts;
   if (category) {
     products = products.filter(p => p.category === category);
