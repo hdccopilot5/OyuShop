@@ -85,7 +85,7 @@
 
 .stat-label {
   font-weight: 700;
-  color: #555;
+  color: #333;
 }
 
 .stat-value {
@@ -95,7 +95,7 @@
 }
 
 .stat-sub {
-  color: #666;
+  color: #444;
   font-weight: 600;
 }
 
@@ -204,7 +204,7 @@
 }
 
 .muted {
-  color: #666;
+  color: #555;
   margin: 6px 0;
 }
 
