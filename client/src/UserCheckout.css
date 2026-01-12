@@ -252,6 +252,21 @@
   margin-top: 10px;
 }
 
+.promo-toggle {
+  margin-top: 10px;
+  background: #fffaf0;
+  border: 1px dashed #f59e0b;
+  color: #b45309;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.promo-toggle:hover {
+  background: #fff3e6;
+}
+
 .promo-box input {
   flex: 1;
   padding: 10px;
