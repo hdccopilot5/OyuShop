@@ -1079,18 +1079,30 @@ app.put('/api/inventory-logs/:id', async (req, res) => {
 
 // MongoDB-д холболт оролдох (MONGODB_URI байхгүй бол mock-оор үргэлжилнэ)
 const MONGODB_URI = process.env.MONGODB_URI;
+console.log('🔍 MONGODB_URI тохируулагдсан:', !!MONGODB_URI);
+if (MONGODB_URI) {
+  console.log('📝 URI эхэлэл:', MONGODB_URI.substring(0, 50) + '...');
+}
+
 if (!MONGODB_URI) {
   console.log('⚠️ MongoDB URI тохируулаагүй. Mock өгөгдөл ашиглаж байна.');
 } else {
   mongoose
-    .connect(MONGODB_URI)
+    .connect(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    })
     .then(() => {
       isMongoConnected = true;
       console.log('✅ MongoDB холбогдлоо!');
+      console.log('📊 Connected to:', mongoose.connection.name, '@', mongoose.connection.host);
     })
     .catch((err) => {
       console.log('⚠️ MongoDB холбогдоогүй. Mock өгөгдөл ашиглаж байна.');
-      console.log('Алдаа:', err.message);
+      console.log('❌ Алдаа:', err.message);
+      console.log('🔗 Attempt URI:', MONGODB_URI.substring(0, 50) + '...');
     });
 }
 
