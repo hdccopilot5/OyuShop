@@ -378,7 +378,7 @@ app.get('/api/products', async (req, res) => {
       // Optimized query: lean docs + projection + maxTimeMS
       const query = Product
         .find(filter)
-        .select('name description price category image stock orderIndex')
+        .select('name description price category image images stock orderIndex')
         .sort({ orderIndex: 1, name: 1 })
         .lean()
         .maxTimeMS(30000); // 30s for slow Render↔Atlas connection
@@ -399,7 +399,7 @@ app.get('/api/products', async (req, res) => {
       try {
         const products2 = await Product
           .find(filter)
-          .select('name description price category image stock orderIndex')
+          .select('name description price category image images stock orderIndex')
           .sort({ orderIndex: 1, name: 1 })
           .lean()
           .maxTimeMS(45000) // allow even longer on retry
