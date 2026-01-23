@@ -17,6 +17,10 @@ function ShopPage({
   const [showWishlist, setShowWishlist] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [addingToCart, setAddingToCart] = useState(null);
+  const [logoSrc, setLogoSrc] = useState('/logo.png');
+  const [bannerSrc, setBannerSrc] = useState('/banner.jpg');
+  const [expandedProduct, setExpandedProduct] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(8);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +29,10 @@ function ShopPage({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    setVisibleCount(8);
+  }, [category, searchQuery, priceFilter]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -74,6 +82,8 @@ function ShopPage({
     return matchesSearch && matchesPrice;
   });
 
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
+
   const SkeletonCard = () => (
     <div className="skeleton-card">
       <div className="skeleton-image"></div>
@@ -85,97 +95,92 @@ function ShopPage({
 
   return (
     <div className="app-container">
+      <div className="banner-section">
+        <div className="banner-container">
+          <div className="banner-slide">
+            <img 
+              src={bannerSrc}
+              alt="Promotional Banner"
+              className="banner-image"
+              onError={() => {
+                if (bannerSrc === '/banner.jpg') {
+                  setBannerSrc('/banner.png');
+                } else {
+                  setBannerSrc('https://via.placeholder.com/1200x400/764ba2/ffffff?text=Banner');
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
       <header className="header">
         <div className="header-content">
           <div className="logo-section">
-            <div className="logo-placeholder">
-              <span className="logo-text">OYU</span>
+            <div className="logo-container">
+              <img 
+                src={logoSrc}
+                alt="OYU Logo" 
+                className="logo-image"
+                onError={() => {
+                  if (logoSrc === '/logo.png') {
+                    setLogoSrc('/logo.jpg');
+                  } else {
+                    setLogoSrc('https://via.placeholder.com/80x80/667eea/ffffff?text=Logo');
+                  }
+                }}
+              />
+              <div className="logo-placeholder" style={{display: 'none'}}>
+                <span className="logo-text">OYU</span>
+              </div>
             </div>
             <div className="header-text">
-              <h1 className="title">Oyu online delguur</h1>
-              <p className="subtitle">🛍️Манай дэлгүүр нь #онлайн бөгөөд чанартай барааг #хамгийн_хямд үнээр найрсаг үйлчилгээгээр санал болгохыг зорин ажилладаг 🤗 Бүх бараа #хүргэлттэй. Бид танд өөрсдийн туршиж үзсэн бараагаа санал болгодог гэдгээрээ онцлогтой 💕</p>
-              <div className="contact-row">
-                <a
-                  className="social-link"
-                  href="https://www.facebook.com/profile.php?id=61575911835307"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Facebook хуудас"
-                  title="Facebook хуудас"
-                >
-                  <img src="/facebook-logo.svg" alt="Facebook" className="social-icon-img" />
-                </a>
-                <div className="phone-list" aria-label="Холбогдох утас">
-                  <span className="phone-label">📞</span>
-                  <a href="tel:99752020" className="phone-number">9975-2020</a>
-                  <span className="phone-dot">•</span>
-                  <a href="tel:94346134" className="phone-number">9434-6134</a>
-                </div>
-              </div>
+              <h1 className="title">Oyu Online Delguur</h1>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="content">
-        <div className="filter-section">
-          <label className="filter-label">Ангилал сонгох:</label>
-          <select 
-            className="filter-select" 
-            onChange={e => setCategory(e.target.value)} 
-            value={category}
-          >
-            <option value="">🏪 Бүх барааг харах</option>
-            <option value="baby">👶 Хүүхдийн бараа</option>
-            <option value="moms">👩 Төрсөн эхийн бараа</option>
-          </select>
-
-          <label className="filter-label">Үнэ:</label>
-          <select 
-            className="filter-select" 
-            onChange={e => setPriceFilter(e.target.value)} 
-            value={priceFilter}
-          >
-            <option value="all">💰 Бүх үнэ</option>
-            <option value="under10k">💵 10,000₮ хүртэл</option>
-            <option value="10k-20k">💵 10,000₮ - 20,000₮</option>
-            <option value="20k-50k">💵 20,000₮ - 50,000₮</option>
-            <option value="over50k">💵 50,000₮+</option>
-          </select>
-
+      <nav className="navigation-bar">
+        <div className="nav-content">
           <div className="search-box">
             <input
               type="text"
-              placeholder="🔍 Бараа хайх..."
+              placeholder="Хайх"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="search-input"
             />
           </div>
 
-          <div className="header-buttons">
-            <Link to="/tutorials" className="checkout-btn" style={{textDecoration: 'none'}}>🎬 Заавар</Link>
+          <select 
+            className="nav-select" 
+            onChange={e => setCategory(e.target.value)} 
+            value={category}
+          >
+            <option value="">Бүгд</option>
+            <option value="baby">Хүүхдийн бараа</option>
+            <option value="moms">Төрсөн эхийн бараа</option>
+            <option value="bundle">Багц бүтээгдэхүүн</option>
+          </select>
+
+          <div className="action-buttons">
+            <Link to="/tutorials" className="action-btn tutorials-btn" style={{textDecoration: 'none'}}>🎥 Заавар</Link>
             <button 
               onClick={handleCheckout}
-              className={`checkout-btn ${cartItems.length === 0 ? 'disabled' : ''}`}
+              className={`action-btn cart-btn ${cartItems.length === 0 ? 'disabled' : ''}`}
               disabled={cartItems.length === 0}
             >
               🛒 Сагс ({cartItems.length})
             </button>
-            <button onClick={toggleDarkMode} className="dark-mode-toggle" title={darkMode ? 'Цагаан өнгө' : 'Хар өнгө'}>
+            <button onClick={toggleDarkMode} className="action-btn dark-mode-btn" title={darkMode ? 'Цагаан өнгө' : 'Хар өнгө'}>
               {darkMode ? '☀️' : '🌙'}
             </button>
-            <a 
-              href="https://www.messenger.com/t/701484816372660" 
-              target="_blank" 
-              rel="noreferrer"
-              className="messenger-btn"
-              title="Messenger холбоо"
-            >
-              💬
-            </a>
           </div>
         </div>
+      </nav>
+
+      <div className="content">
 
         {loading && (
           <div className="products-grid">
@@ -184,11 +189,11 @@ function ShopPage({
         )}
 
         {!loading && filteredProducts.length === 0 && (
-          <p className="no-products">{searchQuery || priceFilter !== 'all' ? 'Хайлтад тохирох бараа олдсонгүй' : 'Энэ ангиллд бараа байхгүй байна'}</p>
+          <p className="no-products">{searchQuery || priceFilter !== 'all' ? 'Хайлтад тохирох бараа олдсонгүй' : 'Энэ ангиллалд бараа байхгүй байна'}</p>
         )}
 
         <div className="products-grid">
-          {filteredProducts.map((p) => (
+          {visibleProducts.map((p) => (
             <div key={p._id || Math.random()} className="product-card">
               <div className="product-image-wrapper">
                 {getCurrentImage(p) ? (
@@ -218,6 +223,14 @@ function ShopPage({
               <div className="product-info">
                 <h3 className="product-name">{p.name}</h3>
                 <p className="product-description">{p.description}</p>
+                {p.description && p.description.length > 60 && (
+                  <button 
+                    className="view-details-btn"
+                    onClick={() => setExpandedProduct(p)}
+                  >
+                    Дэлгэрэнгүй
+                  </button>
+                )}
                 <div className="product-footer">
                   <span className="product-price">{p.price}₮</span>
                   <button 
@@ -239,6 +252,14 @@ function ShopPage({
             </div>
           ))}
         </div>
+
+        {!loading && filteredProducts.length > visibleCount && (
+          <div className="load-more-container">
+            <button className="load-more-btn" onClick={() => setVisibleCount(filteredProducts.length)}>
+              Үргэлжлүүлэх
+            </button>
+          </div>
+        )}
       </div>
 
       {zoomImage && (
@@ -246,6 +267,36 @@ function ShopPage({
           <div className="zoom-modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="zoom-close-btn" onClick={closeZoom}>✕</button>
             <img src={zoomImage} alt="Томруулсан зураг" className="zoomed-image" />
+          </div>
+        </div>
+      )}
+
+      {expandedProduct && (
+        <div className="zoom-modal" onClick={() => setExpandedProduct(null)}>
+          <div className="description-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="zoom-close-btn" onClick={() => setExpandedProduct(null)}>✕</button>
+            <h2 className="modal-product-name">{expandedProduct.name}</h2>
+            <div className="modal-product-image-wrapper">
+              <img src={getCurrentImage(expandedProduct)} alt={expandedProduct.name} className="modal-product-image" />
+            </div>
+            <div className="modal-product-details">
+              <p className="modal-product-price">Үнэ: <strong>{expandedProduct.price}₮</strong></p>
+              <p className="modal-product-stock">Үлдэгдэл: <strong>{expandedProduct.stock || 0}</strong></p>
+            </div>
+            <div className="modal-description-section">
+              <h3>Тайлбар:</h3>
+              <p className="modal-full-description">{expandedProduct.description}</p>
+            </div>
+            <button 
+              onClick={() => {
+                addToCart(expandedProduct);
+                setExpandedProduct(null);
+              }}
+              className="modal-add-to-cart-btn"
+              disabled={(expandedProduct.stock || 0) === 0}
+            >
+              {(expandedProduct.stock || 0) === 0 ? 'Үлдэгдэлгүй' : '🛒 Сагс дээр нэмэх'}
+            </button>
           </div>
         </div>
       )}
@@ -291,6 +342,26 @@ function ShopPage({
       )}
 
       <footer className="footer">
+        <div className="footer-social">
+          <a
+            className="footer-social-link"
+            href="https://www.facebook.com/profile.php?id=61575911835307"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Facebook хуудас"
+          >
+            <img src="/facebook-logo.svg" alt="Facebook" className="footer-social-icon" />
+          </a>
+          <a 
+            href="https://www.messenger.com/t/701484816372660" 
+            target="_blank" 
+            rel="noreferrer"
+            className="footer-social-link"
+            title="Messenger холбоо"
+          >
+            <img src="/messenger-logo.svg" alt="Messenger" className="footer-social-icon" />
+          </a>
+        </div>
         <p>© 2026.Oyu online delguur. Зохиогчийн бүх эрх хуулиар хамгаалагдсан болно.</p>
       </footer>
     </div>

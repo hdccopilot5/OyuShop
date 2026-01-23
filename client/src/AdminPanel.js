@@ -233,11 +233,14 @@ function AdminPanel({ onLogout }) {
   const handleMultipleImagesChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0) {
+      // Зөвхөн 3 зургийг л авах
+      const maxImages = 3;
+      const filesToProcess = files.slice(0, maxImages);
       const newPreviews = [];
       const newImages = [];
       let filesProcessed = 0;
 
-      files.forEach(file => {
+      filesToProcess.forEach(file => {
         const reader = new FileReader();
         reader.onload = (event) => {
           const base64 = event.target.result;
@@ -245,12 +248,12 @@ function AdminPanel({ onLogout }) {
           newPreviews.push(base64);
           filesProcessed++;
 
-          if (filesProcessed === files.length) {
+          if (filesProcessed === filesToProcess.length) {
             setFormData(prev => ({
               ...prev,
-              images: [...(prev.images || []), ...newImages]
+              images: [...(prev.images || []), ...newImages].slice(0, 5) // Max 5 total images
             }));
-            setImagePreviews(prev => [...prev, ...newPreviews]);
+            setImagePreviews(prev => [...prev, ...newPreviews].slice(0, 5));
           }
         };
         reader.readAsDataURL(file);
@@ -1016,8 +1019,9 @@ function AdminPanel({ onLogout }) {
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="baby">👶 Хүүхдийн бараа</option>
-                  <option value="moms">👩 Төрсөн эхийн бараа</option>
+                  <option value="baby">Хүүхдийн бараа</option>
+                  <option value="moms">Төрсөн эхийн бараа</option>
+                  <option value="bundle">Багц бүтээгдэхүүн</option>
                 </select>
               </div>
             </div>
