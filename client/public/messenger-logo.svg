@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Blue circle background -->
+  <circle cx="256" cy="256" r="256" fill="#0084FF"/>
+  
+  <!-- White lightning bolt message icon -->
+  <path d="M 256 80 L 160 240 L 220 240 L 220 400 L 340 280 L 280 280 L 280 120 Z" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+</svg>
