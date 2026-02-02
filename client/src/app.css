@@ -897,6 +897,7 @@ body.dark-mode .load-more-btn {
   display: flex;
   flex-direction: column;
   border: 1px solid #f0f0f0;
+  position: relative;
 }
 
 .product-card:hover {
@@ -1023,24 +1024,26 @@ body.dark-mode .load-more-btn {
 }
 
 .view-details-btn {
-  display: block;
-  margin: 8px 0 6px 0;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  background: rgba(102, 126, 234, 0.95);
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
-  width: 100%;
+  z-index: 10;
 }
 
 .view-details-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  background: rgba(118, 75, 162, 0.95);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
 }
 
 /* Description Modal */
