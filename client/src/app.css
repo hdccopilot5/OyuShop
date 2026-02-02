@@ -951,6 +951,7 @@ body.dark-mode .load-more-btn {
 }
 
 .product-description {
+  display: none;
   font-size: 0.85rem;
   color: #6c757d;
   margin-bottom: 12px;
@@ -1022,25 +1023,24 @@ body.dark-mode .load-more-btn {
 }
 
 .view-details-btn {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 4px 10px;
-  background-color: #f3f4f6;
-  color: #667eea;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  display: block;
+  margin: 12px 0 8px 0;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
+  width: 100%;
 }
 
 .view-details-btn:hover {
-  background-color: #667eea;
-  color: white;
-  border-color: #667eea;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 /* Description Modal */
@@ -1741,10 +1741,7 @@ body.dark-mode .description-modal-footer {
 }
 
 .product-description-preview {
-  color: #666;
-  font-size: 13px;
-  margin: 8px 0;
-  line-height: 1.5;
+  display: none;
 }
 
 body.dark-mode .product-description-preview {

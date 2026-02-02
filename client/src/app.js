@@ -222,20 +222,13 @@ function ShopPage({
               )}
               <div className="product-info">
                 <h3 className="product-name">{p.name}</h3>
-                {p.description && p.description.length <= 60 ? (
-                  <p className="product-description">{p.description}</p>
-                ) : (
-                  <>
-                    <p className="product-description-preview">{p.description?.substring(0, 60)}...</p>
-                    {p.description && (
-                      <button 
-                        className="view-details-btn"
-                        onClick={() => setExpandedProduct(p)}
-                      >
-                        Дэлгэрэнгүй
-                      </button>
-                    )}
-                  </>
+                {p.description && (
+                  <button 
+                    className="view-details-btn"
+                    onClick={() => setExpandedProduct(p)}
+                  >
+                    Дэлгэрэнгүй
+                  </button>
                 )}
                 <div className="product-footer">
                   <span className="product-price">{p.price}₮</span>
