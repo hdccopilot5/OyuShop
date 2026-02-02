@@ -786,12 +786,14 @@ app.get('/api/stats/summary', requireAdmin, async (req, res) => {
     const today = startOfToday();
     const seven = daysAgo(7);
 
-    let todays = orders.filter(o => new Date(o.orderDate) >= today);
-    let last7 = orders.filter(o => new Date(o.orderDate) >= seven);
+    const deliveredStatus = 'Хүргэгдсэн';
+
+    let todays = orders.filter(o => new Date(o.orderDate) >= today && o.status === deliveredStatus);
+    let last7 = orders.filter(o => new Date(o.orderDate) >= seven && o.status === deliveredStatus);
 
     if (isMongoConnected) {
-      todays = await Order.find({ orderDate: { $gte: today } });
-      last7 = await Order.find({ orderDate: { $gte: seven } });
+      todays = await Order.find({ orderDate: { $gte: today }, status: deliveredStatus });
+      last7 = await Order.find({ orderDate: { $gte: seven }, status: deliveredStatus });
     }
 
     const sum = (arr) => arr.reduce((s,o)=>s+(o.totalPrice||0),0);
@@ -820,7 +822,7 @@ app.get('/api/stats/top-products', requireAdmin, async (req, res) => {
     let result = [];
     if (isMongoConnected) {
       result = await Order.aggregate([
-        { $match: { orderDate: { $gte: since } } },
+        { $match: { orderDate: { $gte: since }, status: 'Хүргэгдсэн' } },
         { $unwind: '$products' },
         { $group: { _id: '$products._id', name: { $first: '$products.name' }, qty: { $sum: '$products.quantity' }, revenue: { $sum: { $multiply: ['$products.quantity', '$products.price'] } } } },
         { $sort: { qty: -1 } },
@@ -828,15 +830,17 @@ app.get('/api/stats/top-products', requireAdmin, async (req, res) => {
       ]);
     } else {
       const map = new Map();
-      orders.filter(o => new Date(o.orderDate) >= since).forEach(o => {
-        (o.products||[]).forEach(p => {
-          const key = p._id || p.name;
-          const cur = map.get(key) || { _id: key, name: p.name, qty:0, revenue:0 };
-          cur.qty += p.quantity;
-          cur.revenue += (p.quantity * p.price);
-          map.set(key, cur);
+      orders
+        .filter(o => new Date(o.orderDate) >= since && o.status === 'Хүргэгдсэн')
+        .forEach(o => {
+          (o.products||[]).forEach(p => {
+            const key = p._id || p.name;
+            const cur = map.get(key) || { _id: key, name: p.name, qty:0, revenue:0 };
+            cur.qty += p.quantity;
+            cur.revenue += (p.quantity * p.price);
+            map.set(key, cur);
+          });
         });
-      });
       result = Array.from(map.values()).sort((a,b)=>b.qty-a.qty).slice(0, limit);
     }
 
