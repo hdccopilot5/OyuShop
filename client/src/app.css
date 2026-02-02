@@ -1620,3 +1620,165 @@ body.dark-mode .modal-full-description {
   background: #ff0000;
   transform: rotate(90deg);
 }
+
+/* Product Description Modal */
+.description-modal-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  max-width: 800px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+body.dark-mode .description-modal-content {
+  background-color: #16213e;
+  color: #e0e0e0;
+}
+
+.description-modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+body.dark-mode .description-modal-header {
+  border-bottom-color: #0f3460;
+}
+
+.description-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #212529;
+  flex: 1;
+}
+
+body.dark-mode .description-modal-header h2 {
+  color: #e0e0e0;
+}
+
+.description-modal-body {
+  display: flex;
+  flex: 1;
+  overflow-y: auto;
+  gap: 20px;
+  padding: 20px;
+}
+
+.description-modal-image {
+  flex: 0 0 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+body.dark-mode .description-modal-image {
+  background: #0f3460;
+}
+
+.description-modal-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.description-modal-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.description-full {
+  line-height: 1.8;
+  color: #555;
+  font-size: 15px;
+  margin: 0;
+}
+
+body.dark-mode .description-full {
+  color: #adb5bd;
+}
+
+.description-modal-footer {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+  margin-top: auto;
+}
+
+body.dark-mode .description-modal-footer {
+  border-top-color: #0f3460;
+}
+
+.view-details-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.view-details-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.product-description-preview {
+  color: #666;
+  font-size: 13px;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+body.dark-mode .product-description-preview {
+  color: #adb5bd;
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .description-modal-content {
+    max-width: 95vw;
+    max-height: 90vh;
+    width: 100%;
+  }
+
+  .description-modal-body {
+    flex-direction: column;
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .description-modal-image {
+    flex: 0 0 auto;
+    height: 300px;
+  }
+
+  .description-modal-header {
+    padding: 15px;
+  }
+
+  .description-modal-header h2 {
+    font-size: 18px;
+  }
+
+  .description-full {
+    font-size: 14px;
+  }
+}

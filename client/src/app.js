@@ -222,14 +222,20 @@ function ShopPage({
               )}
               <div className="product-info">
                 <h3 className="product-name">{p.name}</h3>
-                <p className="product-description">{p.description}</p>
-                {p.description && p.description.length > 60 && (
-                  <button 
-                    className="view-details-btn"
-                    onClick={() => setExpandedProduct(p)}
-                  >
-                    Дэлгэрэнгүй
-                  </button>
+                {p.description && p.description.length <= 60 ? (
+                  <p className="product-description">{p.description}</p>
+                ) : (
+                  <>
+                    <p className="product-description-preview">{p.description?.substring(0, 60)}...</p>
+                    {p.description && (
+                      <button 
+                        className="view-details-btn"
+                        onClick={() => setExpandedProduct(p)}
+                      >
+                        Дэлгэрэнгүй
+                      </button>
+                    )}
+                  </>
                 )}
                 <div className="product-footer">
                   <span className="product-price">{p.price}₮</span>
@@ -337,6 +343,47 @@ function ShopPage({
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {expandedProduct && (
+        <div className="zoom-modal" onClick={() => setExpandedProduct(null)}>
+          <div className="description-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="description-modal-header">
+              <h2>{expandedProduct.name}</h2>
+              <button className="zoom-close-btn" onClick={() => setExpandedProduct(null)}>✕</button>
+            </div>
+            <div className="description-modal-body">
+              <div className="description-modal-image">
+                {getCurrentImage(expandedProduct) ? (
+                  <img src={getCurrentImage(expandedProduct)} alt={expandedProduct.name} />
+                ) : (
+                  <div className="product-image-placeholder">📦</div>
+                )}
+              </div>
+              <div className="description-modal-info">
+                <p className="description-full">{expandedProduct.description}</p>
+                <div className="description-modal-footer">
+                  <span className="product-price">{expandedProduct.price}₮</span>
+                  <button 
+                    onClick={() => {
+                      addToCart(expandedProduct);
+                      setExpandedProduct(null);
+                      setAddingToCart(expandedProduct._id);
+                      setTimeout(() => setAddingToCart(null), 600);
+                    }}
+                    className={`add-to-cart-btn ${addingToCart === expandedProduct._id ? 'adding' : ''}`}
+                    disabled={(expandedProduct.stock || 0) === 0}
+                  >
+                    {(expandedProduct.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === expandedProduct._id ? '✓ Нэмэгдлээ' : 'Сагс дээр нэмэх'}
+                  </button>
+                </div>
+                <div className="product-stock">
+                  <small>Үлдэгдэл: <strong>{expandedProduct.stock || 0}</strong></small>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
