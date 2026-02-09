@@ -17,7 +17,7 @@ function ShopPage({
   const [showWishlist, setShowWishlist] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [addingToCart, setAddingToCart] = useState(null);
-  const [logoSrc, setLogoSrc] = useState('/logo.png');
+  const [logoSrc, setLogoSrc] = useState('/logo.jpg');
   const [bannerSrc, setBannerSrc] = useState('/banner.jpg');
   const [expandedProduct, setExpandedProduct] = useState(null);
   const [visibleCount, setVisibleCount] = useState(8);
