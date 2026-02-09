@@ -135,7 +135,7 @@ function ShopPage({
               </div>
             </div>
             <div className="header-text">
-              <h1 className="title">Oyu Online Delguur</h1>
+              <h1 className="title">OYU STORE for Mom&Baby</h1>
             </div>
           </div>
         </div>
