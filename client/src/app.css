@@ -950,6 +950,8 @@ body.dark-mode .load-more-btn {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-height: 2.8em;
+  max-height: 2.8em;
 }
 
 .product-description {
@@ -1813,6 +1815,7 @@ body.dark-mode .product-description-preview {
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.4;
+    min-height: 2.8em;
     max-height: 2.8em;
   }
 
