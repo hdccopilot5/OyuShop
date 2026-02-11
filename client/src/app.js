@@ -292,11 +292,13 @@ function ShopPage({
               onClick={() => {
                 addToCart(expandedProduct);
                 setExpandedProduct(null);
+                setAddingToCart(expandedProduct._id);
+                setTimeout(() => setAddingToCart(null), 600);
               }}
-              className="modal-add-to-cart-btn"
+              className={`add-to-cart-btn ${addingToCart === expandedProduct._id ? 'adding' : ''}`}
               disabled={(expandedProduct.stock || 0) === 0}
             >
-              {(expandedProduct.stock || 0) === 0 ? 'Үлдэгдэлгүй' : 'Сагсанд нэмэх'}
+              {(expandedProduct.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === expandedProduct._id ? '✓ Нэмэгдлээ' : 'Сагсанд нэмэх'}
             </button>
           </div>
         </div>

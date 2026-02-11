@@ -37,7 +37,7 @@
 }
 
 .form-section h2 {
-  color: #333;
+  color: #0FA6A0;
   margin-bottom: 25px;
   font-size: 1.4rem;
 }
@@ -93,9 +93,9 @@
   gap: 15px;
 }
 
-.submit-btn {
+.checkout-container .submit-btn {
   padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -106,9 +106,10 @@
   margin-top: 10px;
 }
 
-.submit-btn:hover:not(:disabled) {
+.checkout-container .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  background: #0C968F;
+  box-shadow: 0 4px 12px rgba(15, 166, 160, 0.35);
 }
 
 .submit-btn:disabled {
@@ -126,7 +127,7 @@
 }
 
 .order-summary h2 {
-  color: #333;
+  color: #0FA6A0;
   margin-bottom: 20px;
   font-size: 1.3rem;
 }
@@ -169,7 +170,7 @@
 
 .item-total {
   font-weight: 600;
-  color: #667eea;
+  color: #0FA6A0;
   white-space: nowrap;
   min-width: 80px;
   text-align: right;
@@ -225,14 +226,14 @@
 .total-price {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #667eea;
+  color: #0FA6A0;
 }
 
 .delivery-info {
   background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
   padding: 15px;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #0FA6A0;
 }
 
 .delivery-info p {
@@ -242,7 +243,7 @@
 }
 
 .delivery-info strong {
-  color: #667eea;
+  color: #0FA6A0;
   font-weight: 600;
 }
 
@@ -274,14 +275,19 @@
   border-radius: 6px;
 }
 
-.promo-btn {
+.checkout-container .promo-btn {
   padding: 10px 14px;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 700;
+}
+
+.checkout-container .promo-btn:hover {
+  background: #0C968F;
+  box-shadow: 0 3px 8px rgba(15, 166, 160, 0.3);
 }
 
 .promo-applied {
@@ -312,7 +318,7 @@
   height: 28px;
   padding: 0;
   border: none;
-  background-color: #667eea;
+  background-color: #0FA6A0;
   color: white;
   border-radius: 4px;
   cursor: pointer;
@@ -324,7 +330,7 @@
 }
 
 .qty-btn:hover {
-  background-color: #764ba2;
+  background-color: #0C968F;
   transform: scale(1.1);
 }
 
@@ -351,7 +357,8 @@
 .recorder-video { width: 240px; height: 180px; background: #000; border-radius: 8px; }
 .recorder-controls { display: flex; align-items: center; gap: 10px; }
 .recorder-preview { width: 260px; height: 180px; border-radius: 8px; }
-.recorder-btn { padding: 8px 12px; background: #667eea; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.recorder-btn { padding: 8px 12px; background: #0FA6A0; color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
+.recorder-btn:hover { background: #0C968F; box-shadow: 0 3px 8px rgba(15, 166, 160, 0.3); }
 .recorder-btn.stop { background: #e74c3c; }
 .recorder-error { color: #e74c3c; }
 .recorder-success { color: #16a34a; font-weight: 600; }
