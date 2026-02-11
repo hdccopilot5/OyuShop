@@ -867,7 +867,7 @@ body.dark-mode .wishlist-item-info h4 {
 
 .load-more-btn {
   padding: 12px 22px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0FA6A0;
   color: white;
   border: none;
   border-radius: 8px;
@@ -879,7 +879,7 @@ body.dark-mode .wishlist-item-info h4 {
 
 .load-more-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(118, 75, 162, 0.35);
+  box-shadow: 0 8px 20px rgba(15, 166, 160, 0.35);
 }
 
 .load-more-btn:active {
@@ -888,8 +888,8 @@ body.dark-mode .wishlist-item-info h4 {
 }
 
 body.dark-mode .load-more-btn {
-  background: linear-gradient(135deg, #4c6fff 0%, #7f5af0 100%);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+  background: #0FA6A0;
+  box-shadow: 0 6px 16px rgba(15, 166, 160, 0.35);
 }
 
 /* Product Card */
