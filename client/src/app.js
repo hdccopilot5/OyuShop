@@ -242,7 +242,7 @@ function ShopPage({
                       className={`add-to-cart-btn ${addingToCart === p._id ? 'adding' : ''}`}
                       disabled={(p.stock || 0) === 0}
                     >
-                      {(p.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === p._id ? '✓ Нэмэгдлээ' : 'Сагс дээр нэмэх'}
+                      {(p.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === p._id ? '✓ Нэмэгдлээ' : 'Сагсанд нэмэх'}
                     </button>
                   </div>
                 </div>
