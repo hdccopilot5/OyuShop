@@ -1168,7 +1168,7 @@ body.dark-mode .modal-full-description {
 .modal-add-to-cart-btn {
   width: 100%;
   padding: 14px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0FA6A0;
   color: white;
   border: none;
   border-radius: 8px;
@@ -1180,7 +1180,8 @@ body.dark-mode .modal-full-description {
 
 .modal-add-to-cart-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  background: #0C968F;
+  box-shadow: 0 6px 16px rgba(15, 166, 160, 0.35);
 }
 
 .modal-add-to-cart-btn:disabled {

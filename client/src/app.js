@@ -296,7 +296,7 @@ function ShopPage({
               className="modal-add-to-cart-btn"
               disabled={(expandedProduct.stock || 0) === 0}
             >
-              {(expandedProduct.stock || 0) === 0 ? 'Үлдэгдэлгүй' : '🛒 Сагс дээр нэмэх'}
+              {(expandedProduct.stock || 0) === 0 ? 'Үлдэгдэлгүй' : 'Сагсанд нэмэх'}
             </button>
           </div>
         </div>
@@ -371,7 +371,7 @@ function ShopPage({
                     className={`add-to-cart-btn ${addingToCart === expandedProduct._id ? 'adding' : ''}`}
                     disabled={(expandedProduct.stock || 0) === 0}
                   >
-                    {(expandedProduct.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === expandedProduct._id ? '✓ Нэмэгдлээ' : 'Сагс дээр нэмэх'}
+                    {(expandedProduct.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === expandedProduct._id ? '✓ Нэмэгдлээ' : 'Сагсанд нэмэх'}
                   </button>
                 </div>
                 <div className="product-stock">
