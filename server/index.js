@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
+const ExcelJS = require('exceljs');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -204,7 +205,11 @@ const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
 
 const InventoryLogSchema = new mongoose.Schema({
   productCode: String,
+  category: String,
   productName: String,
+  color: String,
+  size: String,
+  notes: String,
   importDate: Date,
   costPrice: Number,
   salePrice: Number,
@@ -366,9 +371,10 @@ app.get('/api/products', async (req, res) => {
   // Build filter outside try/catch so it is available for retry
   let filter = {};
   if (category) filter.category = category;
-  // Only add stock filter if it's a positive number
-  if (lowStockThreshold !== undefined && !isNaN(lowStockThreshold) && lowStockThreshold > 0) {
-    filter.stock = { $lt: lowStockThreshold };
+  // Only add stock filter if it's a valid number (allow 0)
+  if (lowStockThreshold !== undefined && !isNaN(lowStockThreshold) && lowStockThreshold >= 0) {
+    // Use $lte to match UI label "≤ threshold"
+    filter.stock = { $lte: lowStockThreshold };
   }
   
   if (isMongoConnected) {
@@ -706,25 +712,27 @@ app.get('/api/orders/export/csv', requireAdmin, async (req, res) => {
       exportOrders = await Order.find().sort({ _id: -1 });
     }
 
-    const header = ['customerName','phone','address','notes','subtotal','discountAmount','promoCode','totalPrice','status','orderDate','products'];
+    const delimiter = ';';
+    const header = ['Нэр','Утас','Хаяг','Тайлбар','Дүн','Хөнгөлөлт','Купон','Нийт үнэ','Статус','Огноо','Бараа'];
     const rows = exportOrders.map(o => {
       const items = (o.products || []).map(p => `${p.name} x${p.quantity}`).join(' | ');
       return [
-        escapeCsv(o.customerName),
-        escapeCsv(o.phone),
-        escapeCsv(o.address),
-        escapeCsv(o.notes || ''),
-        o.subtotal || o.totalPrice || 0,
-        o.discountAmount || 0,
-        escapeCsv(o.promoCode || ''),
-        o.totalPrice || 0,
-        escapeCsv(o.status || ''),
-        new Date(o.orderDate || o._id).toISOString(),
-        escapeCsv(items)
-      ].join(',');
+        escapeCsv(o.customerName, delimiter),
+        escapeCsv(o.phone, delimiter),
+        escapeCsv(o.address, delimiter),
+        escapeCsv(o.notes || '', delimiter),
+        escapeCsv(o.subtotal || o.totalPrice || 0, delimiter),
+        escapeCsv(o.discountAmount || 0, delimiter),
+        escapeCsv(o.promoCode || '', delimiter),
+        escapeCsv(o.totalPrice || 0, delimiter),
+        escapeCsv(o.status || '', delimiter),
+        escapeCsv(new Date(o.orderDate || o._id).toISOString(), delimiter),
+        escapeCsv(items, delimiter)
+      ].join(delimiter);
     });
 
-    const csv = [header.join(','), ...rows].join('\n');
+    const eol = '\r\n';
+    const csv = ['sep=' + delimiter, header.map(v => escapeCsv(v, delimiter)).join(delimiter), ...rows].join(eol);
     const bom = '\uFEFF'; // UTF-8 BOM for proper character encoding in Excel
     res.setHeader('Content-Type', 'text/csv;charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="orders.csv"');
@@ -732,6 +740,71 @@ app.get('/api/orders/export/csv', requireAdmin, async (req, res) => {
   } catch (e) {
     console.log('CSV export error:', e.message);
     res.status(500).send('CSV export failed');
+  }
+});
+
+// API: Orders XLSX export (admin)
+app.get('/api/orders/export/xlsx', requireAdmin, async (req, res) => {
+  try {
+    let exportOrders = orders;
+    if (isMongoConnected) {
+      exportOrders = await Order.find().sort({ _id: -1 });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const filename = `orders-${today}.xlsx`;
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'OyuShop';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Orders', {
+      views: [{ state: 'frozen', ySplit: 1 }]
+    });
+
+    const header = ['Нэр','Утас','Хаяг','Тайлбар','Дүн','Хөнгөлөлт','Купон','Нийт үнэ','Статус','Огноо','Бараа'];
+    const rows = exportOrders.map(o => {
+      const items = (o.products || []).map(p => `${p.name} x${p.quantity}`).join('\n');
+      return [
+        o.customerName || '',
+        o.phone || '',
+        o.address || '',
+        o.notes || '',
+        o.subtotal || o.totalPrice || 0,
+        o.discountAmount || 0,
+        o.promoCode || '',
+        o.totalPrice || 0,
+        o.status || '',
+        new Date(o.orderDate || o._id).toLocaleString('mn-MN'),
+        items
+      ];
+    });
+
+    sheet.addTable({
+      name: 'OrdersTable',
+      ref: 'A1',
+      headerRow: true,
+      style: { theme: 'TableStyleMedium9', showRowStripes: true },
+      columns: header.map(name => ({ name })),
+      rows
+    });
+
+    // Column widths
+    const widths = [18, 12, 28, 18, 10, 10, 10, 10, 14, 18, 32];
+    widths.forEach((w, idx) => {
+      const col = sheet.getColumn(idx + 1);
+      col.width = w;
+      if (idx === 10) col.alignment = { wrapText: true, vertical: 'top' };
+      if (idx === 2 || idx === 3 || idx === 10) col.alignment = { ...(col.alignment || {}), wrapText: true, vertical: 'top' };
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (e) {
+    console.log('XLSX export error:', e.message);
+    res.status(500).send('XLSX export failed');
   }
 });
 
@@ -756,11 +829,12 @@ app.get('/api/orders/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// Helper: escape CSV
-const escapeCsv = (v) => {
+// Helper: escape CSV (Excel friendly)
+const escapeCsv = (v, delimiter = ';') => {
   if (v === null || v === undefined) return '';
   const s = String(v).replace(/"/g, '""');
-  if (s.search(/([",\n])/g) >= 0) {
+  // Quote if it contains delimiter, quotes, or newlines
+  if (s.includes(delimiter) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
     return '"' + s + '"';
   }
   return s;
@@ -969,7 +1043,7 @@ app.patch('/api/orders/:id/status', requireAdmin, async (req, res) => {
 
 // API: Бараа бүртгэл үүсгэх (админ)
 app.post('/api/inventory-logs', async (req, res) => {
-  const { productCode, productName, importDate, costPrice, salePrice, quantity, cargoPrice, inspectionCost, otherCost } = req.body;
+  const { productCode, category, productName, color, size, notes, importDate, costPrice, salePrice, quantity, cargoPrice, inspectionCost, otherCost } = req.body;
   
   if (!productCode || !productName || !costPrice || !salePrice || !quantity) {
     return res.status(400).json({ 
@@ -980,7 +1054,11 @@ app.post('/api/inventory-logs', async (req, res) => {
 
   const logData = {
     productCode,
+    category: category || '',
     productName,
+    color: color || '',
+    size: size || '',
+    notes: notes || '',
     importDate: new Date(importDate),
     costPrice: parseFloat(costPrice),
     salePrice: parseFloat(salePrice),
@@ -1037,8 +1115,9 @@ app.get('/api/inventory-logs/export/csv', async (req, res) => {
     logs = inventoryLogs;
   }
 
-  // CSV формат үүсгэх
-  const headers = ['Барааны код', 'Барааны нэр', 'Монголд ирсэн огноо', 'Үндсэн үнэ', 'Зарах үнэ', 'Ширхэг', 'Карго үнэ', 'Баталтын зардал', 'Бусад зардал', 'Нийт зардал', 'Нийт орлого', 'Нийт ашиг', 'Бүртгэлийн огноо'];
+  // CSV формат үүсгэх (Excel friendly)
+  const delimiter = ';';
+  const headers = ['Барааны код', 'Категори', 'Барааны нэр', 'Өнгө', 'Size', 'Тайлбар', 'Монголд ирсэн огноо', 'Үндсэн үнэ', 'Зарах үнэ', 'Ширхэг', 'Карго үнэ', 'Баталтын зардал', 'Бусад зардал', 'Нийт зардал', 'Нийт орлого', 'Нийт ашиг', 'Бүртгэлийн огноо'];
   const csvRows = logs.map(log => {
     const cargoPrice = log.cargoPrice || 0;
     const inspectionCost = log.inspectionCost || 0;
@@ -1049,7 +1128,11 @@ app.get('/api/inventory-logs/export/csv', async (req, res) => {
     
     return [
       log.productCode,
+      log.category || '',
       log.productName,
+      log.color || '',
+      log.size || '',
+      (log.notes || '').replace(/\r?\n/g, ' '),
       new Date(log.importDate).toLocaleDateString('mn-MN'),
       log.costPrice,
       log.salePrice,
@@ -1061,17 +1144,111 @@ app.get('/api/inventory-logs/export/csv', async (req, res) => {
       totalRevenue,
       totalProfit,
       new Date(log.createdAt).toLocaleString('mn-MN')
-    ];
+    ].map((cell) => escapeCsv(cell, delimiter)).join(delimiter);
   });
 
+  const eol = '\r\n';
   const csvContent = [
-    headers.join(','),
-    ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
-  ].join('\n');
+    'sep=' + delimiter,
+    headers.map(h => escapeCsv(h, delimiter)).join(delimiter),
+    ...csvRows
+  ].join(eol);
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename=baraanyg-burtgel-' + new Date().toISOString().split('T')[0] + '.csv');
   res.send('\ufeff' + csvContent); // BOM for Excel UTF-8
+});
+
+// API: Inventory logs XLSX export
+app.get('/api/inventory-logs/export/xlsx', async (req, res) => {
+  try {
+    let logs = [];
+    if (isMongoConnected) {
+      try {
+        logs = await InventoryLog.find().sort({ createdAt: -1 });
+      } catch (err) {
+        console.log('MongoDB алдаа:', err.message);
+        logs = inventoryLogs;
+      }
+    } else {
+      logs = inventoryLogs;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const filename = `baraanyg-burtgel-${today}.xlsx`;
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'OyuShop';
+    workbook.created = new Date();
+    const sheet = workbook.addWorksheet('Inventory', {
+      views: [{ state: 'frozen', ySplit: 1 }]
+    });
+
+    const header = [
+      'Барааны код','Категори','Барааны нэр','Өнгө','Size','Тайлбар','Монголд ирсэн огноо',
+      'Үндсэн үнэ','Зарах үнэ','Ширхэг','Карго үнэ','Баталтын зардал','Бусад зардал',
+      'Нийт зардал','Нийт орлого','Нийт ашиг','Бүртгэлийн огноо'
+    ];
+
+    const rows = logs.map(log => {
+      const cargoPrice = log.cargoPrice || 0;
+      const inspectionCost = log.inspectionCost || 0;
+      const otherCost = log.otherCost || 0;
+      const totalCost = (log.costPrice * log.quantity) + cargoPrice + inspectionCost + otherCost;
+      const totalRevenue = log.salePrice * log.quantity;
+      const totalProfit = totalRevenue - totalCost;
+
+      return [
+        log.productCode || '',
+        log.category || '',
+        log.productName || '',
+        log.color || '',
+        log.size || '',
+        log.notes || '',
+        log.importDate ? new Date(log.importDate).toLocaleDateString('mn-MN') : '',
+        log.costPrice || 0,
+        log.salePrice || 0,
+        log.quantity || 0,
+        cargoPrice,
+        inspectionCost,
+        otherCost,
+        totalCost,
+        totalRevenue,
+        totalProfit,
+        log.createdAt ? new Date(log.createdAt).toLocaleString('mn-MN') : ''
+      ];
+    });
+
+    sheet.addTable({
+      name: 'InventoryTable',
+      ref: 'A1',
+      headerRow: true,
+      style: { theme: 'TableStyleMedium9', showRowStripes: true },
+      columns: header.map(name => ({ name })),
+      rows
+    });
+
+    const widths = [
+      14, 14, 26, 10, 10, 26, 16,
+      12, 12, 10, 12, 14, 12,
+      12, 12, 12, 18
+    ];
+    widths.forEach((w, idx) => {
+      const col = sheet.getColumn(idx + 1);
+      col.width = w;
+      if ([2, 5].includes(idx)) col.alignment = { wrapText: true, vertical: 'top' };
+    });
+    // Notes column (F)
+    sheet.getColumn(6).alignment = { wrapText: true, vertical: 'top' };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (e) {
+    console.log('XLSX inventory export error:', e.message);
+    res.status(500).send('XLSX export failed');
+  }
 });
 
 // API: Бараа бүртгэл устгах (админ)
@@ -1098,11 +1275,15 @@ app.delete('/api/inventory-logs/:id', async (req, res) => {
 
 // API: Бараа бүртгэл засах (админ)
 app.put('/api/inventory-logs/:id', async (req, res) => {
-  const { productCode, productName, importDate, costPrice, salePrice, quantity, cargoPrice, inspectionCost, otherCost } = req.body;
+  const { productCode, category, productName, color, size, notes, importDate, costPrice, salePrice, quantity, cargoPrice, inspectionCost, otherCost } = req.body;
   
   const updateData = {
     productCode,
+    category: category || '',
     productName,
+    color: color || '',
+    size: size || '',
+    notes: notes || '',
     importDate: new Date(importDate),
     costPrice: parseFloat(costPrice),
     salePrice: parseFloat(salePrice),

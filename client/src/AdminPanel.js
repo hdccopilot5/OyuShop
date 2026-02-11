@@ -34,7 +34,11 @@ function AdminPanel({ onLogout }) {
   const scanIntervalRef = useRef(null);
   const [inventoryForm, setInventoryForm] = useState({
     productCode: '',
+    category: '',
     productName: '',
+    color: '',
+    size: '',
+    notes: '',
     importDate: new Date().toISOString().split('T')[0],
     costPrice: '',
     salePrice: '',
@@ -43,6 +47,75 @@ function AdminPanel({ onLogout }) {
     inspectionCost: '',
     otherCost: ''
   });
+
+  const INVENTORY_COLORS = ['Улаан', 'Цэнхэр', 'Ягаан', 'Ногоон', 'Шар', 'Саарал', 'Цагаан', 'Хар', 'Бусад'];
+  const INVENTORY_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free', 'Бусад'];
+
+  const INVENTORY_CATEGORY_ITEMS = {
+    'Хүүхэд тоглоом': [
+      'Хүүхдийн хаздаг тоглоом',
+      'Хараа тогтоох карт',
+      'Үүрдэг толгойн хамгаалалт',
+      'Хүүхдийн хаздаг тоглоом 4 ширхэг'
+    ],
+    'Хүүхэд ус': [
+      'Нярайн ванны суудал',
+      'Усны тоглоомын багц',
+      'Чихний наалт 60 ширхэг',
+      'Хүүхдийн ванн 76x50x20',
+      'Ванны алчуур 75x80',
+      'Ванны зөөлөвч'
+    ],
+    'хүүхэд цэвэрлэгээ': [
+      'Толгой хэлбэржүүлэгч дэр',
+      'Угж угаагч 3 хос',
+      'Өрөөний температур, чийгшил хэмжигч',
+      'Нойтон салфетка халаагч',
+      'Нярайн нус сорогч',
+      'Угж хатаах тавиур',
+      'Хүүхдийн ам цэвэрлэгч 3 хос',
+      'Хумсны хутганы сет',
+      'Шээсний дэвсгэр 70x90',
+      'Олон үйлдэлт угж ариутгагч 250x230x400'
+    ],
+    'хүүхэд хоол': [
+      'Нухаш хөлдөөх сав 2 хос',
+      'Хүүхдийн аяга, тавагны 8 сет',
+      'Махны мини миксер',
+      'Бор хоолны багц',
+      'Тосгууртай силикон энгэрэвч',
+      'Хүүхдийн хоол бэлтгэгч Babycook',
+      'Хүүхдийн соруултай аяга',
+      '360 аяга эргэдэг Munchkin',
+      'Угжтай аяга',
+      'Халуун мэдэрдэг халбага 2 хос',
+      'Хоолны шилэн сав 3 хос',
+      'Даавуун энгэрэвч 3 хос',
+      'Хоолны аяга 3 хос Munchkin',
+      'Хүнсний зиптэй уут 3 хос',
+      'Хүнсний зиптэй уут 14x15 32 ширхэг',
+      'Хүнсний зиптэй уут 18x18.5 22 ширхэг',
+      'Хүнсний зиптэй уут 27х26.5 12 ширхэг',
+      'Шахдаг халбага иж бүрдэл',
+      'Хоолны ширээ',
+      'Хоолны жигнүүртэй ган тогоо'
+    ],
+    'ээж': [
+      'Хэвлий, аарцагны яс чангалах бүс',
+      'Автомат хөхний саалтуур',
+      'Хөхний сүү хадгалах уут 200мл',
+      'Хөхүүл ээжийн дэр',
+      'Хөхний хос сүү цуглуулагч 60мл',
+      'Хөхний памперс 100ш',
+      'Хярзангийн дэр',
+      'Жирэмсний дэр',
+      'Хөхүүл ээжийн багц',
+      'Гар бидэ 500мл'
+    ],
+    'хүний бараа': []
+  };
+
+  const inventoryItemsForCategory = INVENTORY_CATEGORY_ITEMS[inventoryForm.category] || [];
 
   // Tutorials state
   const [showTutorials, setShowTutorials] = useState(false);
@@ -55,8 +128,13 @@ function AdminPanel({ onLogout }) {
   const [topProducts, setTopProducts] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
   const [lowStockThreshold, setLowStockThreshold] = useState(() => {
-    const saved = localStorage.getItem('lowStockThreshold');
-    return saved ? parseInt(saved) : 5;
+    try {
+      const saved = localStorage.getItem('lowStockThreshold');
+      const parsed = saved === null ? NaN : Number(saved);
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : 5;
+    } catch {
+      return 5;
+    }
   });
   const [promos, setPromos] = useState([]);
   const [promoForm, setPromoForm] = useState({ code: '', type: 'percent', amount: '', usageLimit: '', expiresAt: '' });
@@ -119,8 +197,20 @@ function AdminPanel({ onLogout }) {
   }, [lowStockThreshold]);
 
   useEffect(() => {
-    localStorage.setItem('lowStockThreshold', lowStockThreshold.toString());
+    try {
+      localStorage.setItem('lowStockThreshold', lowStockThreshold.toString());
+    } catch {}
   }, [lowStockThreshold]);
+
+  const handleLowStockThresholdChange = (e) => {
+    const raw = e.target.value;
+    const next = Math.max(0, Number(raw));
+    const safeNext = Number.isFinite(next) ? next : 0;
+    setLowStockThreshold(safeNext);
+    try {
+      localStorage.setItem('lowStockThreshold', safeNext.toString());
+    } catch {}
+  };
 
   const fetchStats = async (showSpinner = false) => {
     if (showSpinner) setStatsLoading(true);
@@ -453,6 +543,21 @@ function AdminPanel({ onLogout }) {
     }));
   };
 
+  const handleInventoryCategoryChange = (e) => {
+    const nextCategory = e.target.value;
+    setInventoryForm(prev => {
+      const nextItems = INVENTORY_CATEGORY_ITEMS[nextCategory] || [];
+
+      // Always auto-pick the first known item for the category (user can still edit manually)
+      const nextProductName = nextItems[0] || '';
+      return {
+        ...prev,
+        category: nextCategory,
+        productName: nextProductName
+      };
+    });
+  };
+
   const handleInventorySubmit = async (e) => {
     e.preventDefault();
     
@@ -482,7 +587,11 @@ function AdminPanel({ onLogout }) {
         setMessage(editingLogId ? '✅ Бүртгэл шинэчлэгдлээ' : '✅ Бараа бүртгэгдлээ');
         setInventoryForm({
           productCode: '',
+          category: '',
           productName: '',
+          color: '',
+          size: '',
+          notes: '',
           importDate: new Date().toISOString().split('T')[0],
           costPrice: '',
           salePrice: '',
@@ -505,7 +614,11 @@ function AdminPanel({ onLogout }) {
   const handleEditInventoryLog = (log) => {
     setInventoryForm({
       productCode: log.productCode,
+      category: log.category || '',
       productName: log.productName,
+      color: log.color || '',
+      size: log.size || '',
+      notes: log.notes || '',
       importDate: new Date(log.importDate).toISOString().split('T')[0],
       costPrice: log.costPrice.toString(),
       salePrice: log.salePrice.toString(),
@@ -522,7 +635,11 @@ function AdminPanel({ onLogout }) {
     setEditingLogId(null);
     setInventoryForm({
       productCode: '',
+      category: '',
       productName: '',
+      color: '',
+      size: '',
+      notes: '',
       importDate: new Date().toISOString().split('T')[0],
       costPrice: '',
       salePrice: '',
@@ -550,14 +667,14 @@ function AdminPanel({ onLogout }) {
     }
   };
 
-  const handleExportCSV = async () => {
+  const handleExportXLSX = async () => {
     try {
-      const response = await fetch('https://oyushop-1.onrender.com/api/inventory-logs/export/csv');
+      const response = await fetch('https://oyushop-1.onrender.com/api/inventory-logs/export/xlsx');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `baraanyg-burtgel-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `baraanyg-burtgel-${new Date().toISOString().split('T')[0]}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
@@ -890,8 +1007,8 @@ function AdminPanel({ onLogout }) {
                   <input 
                     type="number"
                     value={lowStockThreshold}
-                    min="1"
-                    onChange={(e) => setLowStockThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                    min="0"
+                    onChange={handleLowStockThresholdChange}
                   />
                 </div>
               </div>
@@ -1276,6 +1393,20 @@ function AdminPanel({ onLogout }) {
                     <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
                   </div>
                 </div>
+
+                <div className="form-group">
+                  <label>Категори</label>
+                  <select name="category" value={inventoryForm.category} onChange={handleInventoryCategoryChange}>
+                    <option value="">Сонгох</option>
+                    <option value="Хүүхэд тоглоом">Хүүхэд тоглоом</option>
+                    <option value="Хүүхэд ус">Хүүхэд ус</option>
+                    <option value="ээж">ээж</option>
+                    <option value="хүүхэд хоол">хүүхэд хоол</option>
+                    <option value="хүүхэд цэвэрлэгээ">хүүхэд цэвэрлэгээ</option>
+                    <option value="хүний бараа">хүний бараа</option>
+                  </select>
+                </div>
+
                 <div className="form-group">
                   <label>Барааны нэр*</label>
                   <input 
@@ -1283,8 +1414,61 @@ function AdminPanel({ onLogout }) {
                     name="productName"
                     value={inventoryForm.productName}
                     onChange={handleInventoryInputChange}
+                    list="inventoryProductNameSuggestions"
                     placeholder="Барааны нэр"
                     required
+                  />
+                  {inventoryItemsForCategory.length > 0 && (
+                    <select
+                      value={inventoryItemsForCategory.includes(inventoryForm.productName) ? inventoryForm.productName : ''}
+                      onChange={(e) => setInventoryForm(prev => ({ ...prev, productName: e.target.value }))}
+                    >
+                      <option value="">Бэлэн нэр сонгох</option>
+                      {inventoryItemsForCategory.map((item) => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </select>
+                  )}
+                  {inventoryItemsForCategory.length > 0 && (
+                    <datalist id="inventoryProductNameSuggestions">
+                      {inventoryItemsForCategory.map((item) => (
+                        <option key={item} value={item} />
+                      ))}
+                    </datalist>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Өнгө</label>
+                  <select name="color" value={inventoryForm.color} onChange={handleInventoryInputChange}>
+                    <option value="">Сонгох</option>
+                    {INVENTORY_COLORS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Хэмжээ (Size)</label>
+                  <select name="size" value={inventoryForm.size} onChange={handleInventoryInputChange}>
+                    <option value="">Сонгох</option>
+                    {INVENTORY_SIZES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Тайлбар</label>
+                  <textarea
+                    name="notes"
+                    value={inventoryForm.notes}
+                    onChange={handleInventoryInputChange}
+                    placeholder="Тайлбар..."
+                    rows="2"
                   />
                 </div>
               </div>
@@ -1386,7 +1570,7 @@ function AdminPanel({ onLogout }) {
             <div className="inventory-report">
               <div className="report-header">
                 <h3>📊 Бараа бүртгэлийн тайлан</h3>
-                <button onClick={handleExportCSV} className="export-btn">📥 Excel татаж авах</button>
+                <button onClick={handleExportXLSX} className="export-btn">📥 Excel татаж авах</button>
               </div>
 
               {inventoryLogs.length === 0 ? (
@@ -1397,7 +1581,11 @@ function AdminPanel({ onLogout }) {
                     <thead>
                       <tr>
                         <th>Барааны код</th>
+                        <th>Категори</th>
                         <th>Нэр</th>
+                        <th>Өнгө</th>
+                        <th>Size</th>
+                        <th>Тайлбар</th>
                         <th>Ирсэн огноо</th>
                         <th>Үндсэн үнэ</th>
                         <th>Зарах үнэ</th>
@@ -1420,7 +1608,11 @@ function AdminPanel({ onLogout }) {
                         return (
                           <tr key={log._id}>
                             <td className="code">{log.productCode}</td>
+                            <td>{log.category || ''}</td>
                             <td>{log.productName}</td>
+                            <td>{log.color || ''}</td>
+                            <td>{log.size || ''}</td>
+                            <td className="notes">{log.notes || ''}</td>
                             <td>{new Date(log.importDate).toLocaleDateString('mn-MN')}</td>
                             <td className="price">{log.costPrice}₮</td>
                             <td className="price">{log.salePrice}₮</td>

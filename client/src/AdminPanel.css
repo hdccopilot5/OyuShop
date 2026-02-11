@@ -932,6 +932,11 @@
   padding: 12px;
   border-bottom: 1px solid #eee;
 }
+.inventory-table td.notes {
+  max-width: 260px;
+  white-space: normal;
+  word-break: break-word;
+}
 
 .inventory-table tbody tr:hover {
   background-color: #f9f9f9;

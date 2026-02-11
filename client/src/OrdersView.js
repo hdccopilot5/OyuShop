@@ -121,10 +121,10 @@ function OrdersView() {
     } catch {}
   };
 
-  const handleExportCsv = async () => {
+  const handleExportXlsx = async () => {
     try {
       setExporting(true);
-      const response = await fetch('https://oyushop-1.onrender.com/api/orders/export/csv', {
+      const response = await fetch('https://oyushop-1.onrender.com/api/orders/export/xlsx', {
         headers: {
           ...authHeaders()
         }
@@ -134,11 +134,11 @@ function OrdersView() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `orders-${new Date().toISOString().split('T')[0]}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert('❌ CSV татаж чадсангүй. Админ эрх шалгана уу.');
+      alert('❌ Excel татаж чадсангүй. Админ эрх шалгана уу.');
     } finally {
       setExporting(false);
     }
@@ -217,8 +217,8 @@ function OrdersView() {
               <option value="Цуцалсан">❌ Цуцалсан</option>
             </select>
           </div>
-          <button onClick={handleExportCsv} className="export-btn" disabled={exporting}>
-            {exporting ? '⏳ Татаж байна...' : '📥 CSV татах'}
+          <button onClick={handleExportXlsx} className="export-btn" disabled={exporting}>
+            {exporting ? '⏳ Татаж байна...' : '📥 Excel татах'}
           </button>
         </div>
       </div>
