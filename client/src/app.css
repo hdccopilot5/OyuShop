@@ -1804,6 +1804,27 @@ body.dark-mode .product-description-preview {
     font-size: 0.85rem;
   }
 
+  .product-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+    max-height: 2.8em;
+  }
+
+  .product-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .product-card .product-actions .view-details-btn,
+  .product-card .product-actions .add-to-cart-btn {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
   .description-modal-content {
     max-width: 95vw;
     max-height: 90vh;
