@@ -1287,6 +1287,135 @@ body.dark-mode .modal-full-description {
   color: #6c757d;
 }
 
+/* Info Terms */
+.info-terms {
+  max-width: 1200px;
+  margin: 30px auto 10px auto;
+  padding: 18px 10px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.info-terms-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 6px 10px;
+}
+
+.info-terms-icon {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-terms-icon img {
+  width: 52px;
+  height: 52px;
+  display: block;
+}
+
+.info-terms-content h4 {
+  margin: 0 0 6px 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.4px;
+  color: #111827;
+  text-transform: uppercase;
+}
+
+.info-terms-content p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+.info-terms-divider {
+  width: 1px;
+  background: #e5e7eb;
+  margin: 6px 0;
+}
+
+/* Contact Section */
+.contact-section {
+  max-width: 1200px;
+  margin: 10px auto 20px auto;
+  padding: 22px 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 340px);
+  gap: 20px;
+  align-items: center;
+}
+
+.contact-details h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.05rem;
+  color: #111827;
+}
+
+.contact-details p {
+  margin: 6px 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.contact-details a {
+  color: #0FA6A0;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.contact-details a:hover {
+  text-decoration: underline;
+}
+
+.contact-facebook {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.contact-facebook iframe {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+}
+
+
+@media (max-width: 900px) {
+  .info-terms {
+    grid-template-columns: 1fr;
+    padding: 16px 14px;
+  }
+
+  .info-terms-divider {
+    width: 100%;
+    height: 1px;
+  }
+
+  .contact-section {
+    grid-template-columns: 1fr;
+    padding: 18px 14px;
+  }
+
+  .contact-facebook {
+    justify-content: flex-start;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .title {

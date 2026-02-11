@@ -385,27 +385,91 @@ function ShopPage({
         </div>
       )}
 
-      <footer className="footer">
-        <div className="footer-social">
-          <a
-            className="footer-social-link"
-            href="https://www.facebook.com/profile.php?id=61575911835307"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Facebook хуудас"
-          >
-            <img src="/facebook-logo.svg" alt="Facebook" className="footer-social-icon" />
-          </a>
-          <a 
-            href="https://www.messenger.com/t/701484816372660" 
-            target="_blank" 
-            rel="noreferrer"
-            className="footer-social-link"
-            title="Messenger холбоо"
-          >
-            <img src="/messenger-logo.svg" alt="Messenger" className="footer-social-icon" />
-          </a>
+      <section className="info-terms">
+        <div className="info-terms-item">
+          <div className="info-terms-icon">
+            <img src="/delivery-icon.svg" alt="Хүргэлтийн нөхцөл" />
+          </div>
+          <div className="info-terms-content">
+            <h4>ХҮРГЭЛТИЙН НӨХЦӨЛ</h4>
+            <p>
+              Хүргэлт ихэнхдээ 2-24 цагт хүргэгддэг. Зарим бараанууд урьдчилсан
+              захиалга, эсвэл тухайн барааны дэлгэрэнгүй тайлбар дээр хүргэлтийн
+              мэдээллийг оруулсан байдаг.
+            </p>
+          </div>
         </div>
+        <div className="info-terms-divider"></div>
+        <div className="info-terms-item">
+          <div className="info-terms-icon">
+            <img src="/payment-icon.svg" alt="Төлбөрийн мэдээлэл" />
+          </div>
+          <div className="info-terms-content">
+            <h4>ТӨЛБӨРИЙН МЭДЭЭЛЭЛ</h4>
+            <p>
+              Та бараагаа хүлээн авсны дараа төлбөрөө 100% бүрэн төлнө.
+            </p>
+          </div>
+        </div>
+        <div className="info-terms-divider"></div>
+        <div className="info-terms-item">
+          <div className="info-terms-icon">
+            <img src="/service-icon.svg" alt="Үйлчилгээний нөхцөл" />
+          </div>
+          <div className="info-terms-content">
+            <h4>ҮЙЛЧИЛГЭЭНИЙ НӨХЦӨЛ</h4>
+            <p>
+              Буцаалт хийх боломжгүй тул худалдан авагч сонголтоо нягтлан хийнэ үү.
+              Солилт хийх тохиолдолд бараа нь ашиглагдаагүй, гэмтэлгүй, анхны сав,
+              баглаа боодолтой байх шаардлагатай.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="contact-section">
+        <div className="contact-details">
+          <h3>Холбоо барих</h3>
+          <p><strong>Хаяг:</strong> Жуков, Офицер, Амгалан</p>
+          <p><strong>Утас:</strong> 9975 2020</p>
+          <p>
+            <strong>Messenger:</strong>{' '}
+            <a
+              href="https://www.messenger.com/t/701484816372660"
+              target="_blank"
+              rel="noreferrer"
+            >
+              OYU STORE for Mom &amp; Baby
+            </a>
+          </p>
+          <p>
+            <strong>Facebook:</strong>{' '}
+            <a
+              href="https://www.facebook.com/people/OYU-STORE-for-MomBaby/61575911835307/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              OYU STORE for Mom&amp;Baby
+            </a>
+          </p>
+        </div>
+        <div className="contact-facebook">
+          <iframe
+            title="Facebook Page"
+            src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2F61575911835307&tabs=&width=320&height=150&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true"
+            width="320"
+            height="150"
+            style={{ border: 'none', overflow: 'hidden' }}
+            scrolling="no"
+            frameBorder="0"
+            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+            allowFullScreen={true}
+            referrerPolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
+      </section>
+
+      <footer className="footer">
         <p>© 2026.Oyu online delguur. Зохиогчийн бүх эрх хуулиар хамгаалагдсан болно.</p>
       </footer>
     </div>
