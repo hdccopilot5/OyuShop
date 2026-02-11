@@ -1341,6 +1341,17 @@ body.dark-mode .modal-full-description {
 }
 
 @media (max-width: 480px) {
+  .product-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .product-card .product-actions .view-details-btn,
+  .product-card .product-actions .add-to-cart-btn {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
   .header-content {
     padding: 15px;
   }
