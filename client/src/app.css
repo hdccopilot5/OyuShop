@@ -1819,6 +1819,26 @@ body.dark-mode .product-description-preview {
     max-height: 2.8em;
   }
 
+  .product-info {
+    padding: 12px;
+  }
+
+  .product-price {
+    margin-bottom: 2px;
+  }
+
+  .product-stock {
+    margin-bottom: 6px;
+  }
+
+  .product-footer {
+    gap: 6px;
+  }
+
+  .product-actions {
+    margin-top: 4px;
+  }
+
   .product-actions {
     flex-direction: column;
     gap: 8px;
