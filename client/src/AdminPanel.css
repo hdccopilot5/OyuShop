@@ -20,9 +20,9 @@
 
 .logout-btn {
   padding: 10px 20px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: #0FA6A0;
   color: white;
-  border: 2px solid white;
+  border: 2px solid #0C968F;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
@@ -30,8 +30,8 @@
 }
 
 .logout-btn:hover {
-  background-color: white;
-  color: #667eea;
+  background-color: #0C968F;
+  color: white;
 }
 
 .admin-content {
@@ -113,12 +113,16 @@
 
 .refresh-btn {
   padding: 10px 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0FA6A0;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
+}
+
+.refresh-btn:hover {
+  background: #0C968F;
 }
 
 .stats-actions {
@@ -353,14 +357,15 @@
   font-size: 0.95rem;
 }
 
-.submit-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.admin-panel .submit-btn {
+  background: #0FA6A0;
   color: white;
 }
 
-.submit-btn:hover:not(:disabled) {
+.admin-panel .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  background: #0C968F;
+  box-shadow: 0 4px 12px rgba(15, 166, 160, 0.35);
 }
 
 .submit-btn:disabled {
@@ -369,12 +374,12 @@
 }
 
 .cancel-btn {
-  background-color: #ddd;
-  color: #333;
+  background-color: #0FA6A0;
+  color: white;
 }
 
 .cancel-btn:hover {
-  background-color: #bbb;
+  background-color: #0C968F;
 }
 
 /* Products Section */
@@ -440,7 +445,7 @@
 
 .bulk-btn {
   padding: 10px 12px;
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: #0FA6A0;
   color: white;
   border: none;
   border-radius: 8px;
@@ -501,23 +506,23 @@
 }
 
 .edit-btn {
-  background-color: #fffbeb;
-  color: #f59e0b;
-  border: 1px solid #fbbf24;
+  background-color: #0FA6A0;
+  color: white;
+  border: 1px solid #0C968F;
 }
 
 .edit-btn:hover {
-  background-color: #fef08a;
+  background-color: #0C968F;
 }
 
 .delete-btn {
-  background-color: #fee2e2;
-  color: #ef4444;
-  border: 1px solid #fca5a5;
+  background-color: #0FA6A0;
+  color: white;
+  border: 1px solid #0C968F;
 }
 
 .delete-btn:hover {
-  background-color: #fecaca;
+  background-color: #0C968F;
 }
 
 .no-products {
@@ -580,7 +585,7 @@
 
 .stock-btn {
   padding: 4px 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0FA6A0;
   color: white;
   border: none;
   border-radius: 4px;
@@ -593,7 +598,8 @@
 
 .stock-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  background: #0C968F;
+  box-shadow: 0 2px 8px rgba(15, 166, 160, 0.3);
 }
 
 .stock-value {
@@ -656,9 +662,9 @@
   margin-bottom: 20px;
 }
 
-.toggle-form-btn {
+.admin-panel .toggle-form-btn {
   padding: 8px 16px;
-  background-color: #667eea;
+  background-color: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -667,8 +673,8 @@
   transition: all 0.3s ease;
 }
 
-.toggle-form-btn:hover {
-  background-color: #5568d3;
+.admin-panel .toggle-form-btn:hover {
+  background-color: #0C968F;
   transform: translateY(-2px);
 }
 
@@ -703,7 +709,7 @@
 
 .toggle-products-btn {
   padding: 8px 16px;
-  background-color: #667eea;
+  background-color: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -714,7 +720,7 @@
 }
 
 .toggle-products-btn:hover {
-  background-color: #5568d3;
+  background-color: #0C968F;
   transform: translateY(-2px);
 }
 /* Inventory Log Styles */
@@ -774,7 +780,7 @@
 
 .scan-btn {
   padding: 8px 12px;
-  background-color: #667eea;
+  background-color: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -789,16 +795,16 @@
 }
 
 .scan-btn:hover:not(:disabled) {
-  background-color: #5568d3;
+  background-color: #0C968F;
   transform: translateY(-2px);
 }
 
 .scan-upload {
   position: relative;
   padding: 8px 12px;
-  background-color: #f1f5f9;
-  color: #333;
-  border: 1px dashed #cbd5e1;
+  background-color: #0FA6A0;
+  color: white;
+  border: 1px dashed #0C968F;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
@@ -831,7 +837,7 @@
 
 .inventory-form .submit-btn {
   padding: 10px 20px;
-  background-color: #667eea;
+  background-color: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -842,13 +848,13 @@
 }
 
 .inventory-form .submit-btn:hover {
-  background-color: #5568d3;
+  background-color: #0C968F;
   transform: translateY(-2px);
 }
 
 .inventory-form .cancel-btn {
   padding: 10px 20px;
-  background-color: #ef4444;
+  background-color: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -859,7 +865,7 @@
 }
 
 .inventory-form .cancel-btn:hover {
-  background-color: #dc2626;
+  background-color: #0C968F;
   transform: translateY(-2px);
 }
 
@@ -885,7 +891,7 @@
 
 .export-btn {
   padding: 8px 16px;
-  background-color: #10b981;
+  background-color: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -896,7 +902,7 @@
 }
 
 .export-btn:hover {
-  background-color: #059669;
+  background-color: #0C968F;
   transform: translateY(-2px);
 }
 
@@ -974,8 +980,8 @@
 
 .inventory-table .edit-btn {
   padding: 6px 10px;
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: #0FA6A0;
+  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -985,13 +991,13 @@
 }
 
 .inventory-table .edit-btn:hover {
-  background-color: #bfdbfe;
+  background-color: #0C968F;
 }
 
 .inventory-table .delete-btn {
   padding: 6px 10px;
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: #0FA6A0;
+  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -1000,7 +1006,7 @@
 }
 
 .inventory-table .delete-btn:hover {
-  background-color: #fecaca;
+  background-color: #0C968F;
 }
 
 .no-data {
@@ -1012,7 +1018,7 @@
 
 .toggle-inventory-btn {
   padding: 8px 16px;
-  background-color: #667eea;
+  background-color: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -1023,13 +1029,13 @@
 }
 
 .toggle-inventory-btn:hover {
-  background-color: #5568d3;
+  background-color: #0C968F;
   transform: translateY(-2px);
 }
 
 .toggle-orders-btn {
   padding: 8px 16px;
-  background-color: #667eea;
+  background-color: #0FA6A0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -1040,6 +1046,6 @@
 }
 
 .toggle-orders-btn:hover {
-  background-color: #5568d3;
+  background-color: #0C968F;
   transform: translateY(-2px);
 }

@@ -62,6 +62,7 @@ function AdminPanel({ onLogout }) {
   const [promoForm, setPromoForm] = useState({ code: '', type: 'percent', amount: '', usageLimit: '', expiresAt: '' });
   const [promoLoading, setPromoLoading] = useState(false);
   const [showPromos, setShowPromos] = useState(true);
+  const [showStats, setShowStats] = useState(true);
   const [reorderSaving, setReorderSaving] = useState(false);
   const [bulkPercent, setBulkPercent] = useState('');
   const dragIdRef = useRef(null);
@@ -856,93 +857,104 @@ function AdminPanel({ onLogout }) {
               <button className="refresh-btn" onClick={() => { fetchStats(true); fetchTopProducts(); fetchLowStock(); }}>
                 ↻ Шинэчлэх
               </button>
+              <button
+                type="button"
+                onClick={() => setShowStats(!showStats)}
+                className="toggle-form-btn"
+              >
+                {showStats ? '▲ Хаах' : '▼ Нээх'}
+              </button>
             </div>
           </div>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <p className="stat-label">Өнөөдрийн захиалга</p>
-              <p className="stat-value">{stats.todayOrders}</p>
-              <p className="stat-sub">Дүн: {formatMoney(stats.todayAmount)}₮</p>
-            </div>
-            <div className="stat-card">
-              <p className="stat-label">Сүүлийн 7 хоног</p>
-              <p className="stat-value">{stats.last7Orders}</p>
-              <p className="stat-sub">Дүн: {formatMoney(stats.last7Amount)}₮</p>
-            </div>
-            <div className="stat-card warning">
-              <div className="stat-row">
-                <p className="stat-label">Бага үлдэгдэл</p>
-                <span className="pill">≤ {lowStockThreshold}</span>
+          {showStats && (
+            <div className="stats-grid">
+              <div className="stat-card">
+                <p className="stat-label">Өнөөдрийн захиалга</p>
+                <p className="stat-value">{stats.todayOrders}</p>
+                <p className="stat-sub">Дүн: {formatMoney(stats.todayAmount)}₮</p>
               </div>
-              <p className="stat-value">{lowStockProducts.length}</p>
-              <p className="stat-sub">Доорх жагсаалтаас шалгана уу</p>
-              <div className="threshold-control">
-                <label>Босго:</label>
-                <input 
-                  type="number"
-                  value={lowStockThreshold}
-                  min="1"
-                  onChange={(e) => setLowStockThreshold(Math.max(1, parseInt(e.target.value) || 1))}
-                />
+              <div className="stat-card">
+                <p className="stat-label">Сүүлийн 7 хоног</p>
+                <p className="stat-value">{stats.last7Orders}</p>
+                <p className="stat-sub">Дүн: {formatMoney(stats.last7Amount)}₮</p>
+              </div>
+              <div className="stat-card warning">
+                <div className="stat-row">
+                  <p className="stat-label">Бага үлдэгдэл</p>
+                  <span className="pill">≤ {lowStockThreshold}</span>
+                </div>
+                <p className="stat-value">{lowStockProducts.length}</p>
+                <p className="stat-sub">Доорх жагсаалтаас шалгана уу</p>
+                <div className="threshold-control">
+                  <label>Босго:</label>
+                  <input 
+                    type="number"
+                    value={lowStockThreshold}
+                    min="1"
+                    onChange={(e) => setLowStockThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
-        <div className="stats-bottom">
-          <div className="stat-card full">
-            <div className="section-title">
-              <h3>🏆 Сүүлийн 7 хоногийн хамгийн их зарагдсан</h3>
-              <small>Ширхэгээр эрэмбэлсэн</small>
-            </div>
-            {statsLoading && <p className="muted">Тойм ачаалж байна...</p>}
-            {!statsLoading && (
-              <div className="top-products">
-                {topProducts.length === 0 ? (
-                  <p className="muted">Өгөгдөл байхгүй</p>
-                ) : (
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Бараа</th>
-                        <th>Ширхэг</th>
-                        <th>Орлого</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topProducts.map((p) => (
-                        <tr key={p._id || p.name}>
-                          <td>{p.name || 'Тодорхойгүй'}</td>
-                          <td>{p.qty}</td>
-                          <td>{formatMoney(p.revenue)}₮</td>
+        {showStats && (
+          <div className="stats-bottom">
+            <div className="stat-card full">
+              <div className="section-title">
+                <h3>🏆 Сүүлийн 7 хоногийн хамгийн их зарагдсан</h3>
+                <small>Ширхэгээр эрэмбэлсэн</small>
+              </div>
+              {statsLoading && <p className="muted">Тойм ачаалж байна...</p>}
+              {!statsLoading && (
+                <div className="top-products">
+                  {topProducts.length === 0 ? (
+                    <p className="muted">Өгөгдөл байхгүй</p>
+                  ) : (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Бараа</th>
+                          <th>Ширхэг</th>
+                          <th>Орлого</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="stat-card full">
-            <div className="section-title">
-              <h3>⚠️ Бага үлдэгдэлтэй бараа</h3>
-              <small>{lowStockProducts.length} бараа</small>
+                      </thead>
+                      <tbody>
+                        {topProducts.map((p) => (
+                          <tr key={p._id || p.name}>
+                            <td>{p.name || 'Тодорхойгүй'}</td>
+                            <td>{p.qty}</td>
+                            <td>{formatMoney(p.revenue)}₮</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
             </div>
-            {lowStockProducts.length === 0 ? (
-              <p className="muted">Бүх барааны үлдэгдэл хэвийн байна</p>
-            ) : (
-              <ul className="low-stock-list">
-                {lowStockProducts.map((p) => (
-                  <li key={p._id}>
-                    <span>{p.name}</span>
-                    <span className="pill danger">{p.stock || 0} ширхэг</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+
+            <div className="stat-card full">
+              <div className="section-title">
+                <h3>⚠️ Бага үлдэгдэлтэй бараа</h3>
+                <small>{lowStockProducts.length} бараа</small>
+              </div>
+              {lowStockProducts.length === 0 ? (
+                <p className="muted">Бүх барааны үлдэгдэл хэвийн байна</p>
+              ) : (
+                <ul className="low-stock-list">
+                  {lowStockProducts.map((p) => (
+                    <li key={p._id}>
+                      <span>{p.name}</span>
+                      <span className="pill danger">{p.stock || 0} ширхэг</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       <div className="admin-content">
