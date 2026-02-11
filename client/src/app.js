@@ -222,8 +222,11 @@ function ShopPage({
               )}
               <div className="product-info">
                 <h3 className="product-name">{p.name}</h3>
+                <span className="product-price">{p.price}₮</span>
+                <div className="product-stock">
+                  <small>Үлдэгдэл: <strong>{p.stock || 0}</strong></small>
+                </div>
                 <div className="product-footer">
-                  <span className="product-price">{p.price}₮</span>
                   <div className="product-actions">
                     {p.description && (
                       <button 
@@ -245,9 +248,6 @@ function ShopPage({
                       {(p.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === p._id ? '✓ Нэмэгдлээ' : 'Сагсанд нэмэх'}
                     </button>
                   </div>
-                </div>
-                <div className="product-stock">
-                  <small>Үлдэгдэл: <strong>{p.stock || 0}</strong></small>
                 </div>
               </div>
             </div>
