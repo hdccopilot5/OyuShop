@@ -554,26 +554,18 @@ body.dark-mode .skeleton-button {
   background: #adb5bd !important;
 }
 
-.tutorials-btn {
+.tutorials-btn,
+.cart-btn {
+  position: relative;
   background: #F2F4F7;
   color: #344054;
   border: 1px solid #E4E7EC;
 }
 
-.tutorials-btn:hover:not(:disabled) {
+.tutorials-btn:hover:not(:disabled),
+.cart-btn:hover:not(:disabled) {
   background: #E4E7EC;
   box-shadow: 0 2px 6px rgba(52, 64, 84, 0.2);
-}
-
-.cart-btn {
-  position: relative;
-  background: #e5e7eb;
-  color: #374151;
-}
-
-.cart-btn:hover:not(:disabled) {
-  background: #d1d5db;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .dark-mode-btn {
