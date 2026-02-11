@@ -222,27 +222,29 @@ function ShopPage({
               )}
               <div className="product-info">
                 <h3 className="product-name">{p.name}</h3>
-                {p.description && (
-                  <button 
-                    className="view-details-btn"
-                    onClick={() => setExpandedProduct(p)}
-                  >
-                    Дэлгэрэнгүй
-                  </button>
-                )}
                 <div className="product-footer">
                   <span className="product-price">{p.price}₮</span>
-                  <button 
-                    onClick={() => {
-                      addToCart(p);
-                      setAddingToCart(p._id);
-                      setTimeout(() => setAddingToCart(null), 600);
-                    }}
-                    className={`add-to-cart-btn ${addingToCart === p._id ? 'adding' : ''}`}
-                    disabled={(p.stock || 0) === 0}
-                  >
-                    {(p.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === p._id ? '✓ Нэмэгдлээ' : 'Сагс дээр нэмэх'}
-                  </button>
+                  <div className="product-actions">
+                    {p.description && (
+                      <button 
+                        className="view-details-btn"
+                        onClick={() => setExpandedProduct(p)}
+                      >
+                        Дэлгэрэнгүй
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => {
+                        addToCart(p);
+                        setAddingToCart(p._id);
+                        setTimeout(() => setAddingToCart(null), 600);
+                      }}
+                      className={`add-to-cart-btn ${addingToCart === p._id ? 'adding' : ''}`}
+                      disabled={(p.stock || 0) === 0}
+                    >
+                      {(p.stock || 0) === 0 ? 'Үлдэгдэлгүй' : addingToCart === p._id ? '✓ Нэмэгдлээ' : 'Сагс дээр нэмэх'}
+                    </button>
+                  </div>
                 </div>
                 <div className="product-stock">
                   <small>Үлдэгдэл: <strong>{p.stock || 0}</strong></small>

@@ -969,10 +969,14 @@ body.dark-mode .load-more-btn {
 
 .product-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
   margin-top: auto;
+}
+
+.product-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .product-price {
@@ -982,7 +986,7 @@ body.dark-mode .load-more-btn {
 }
 
 .add-to-cart-btn {
-  padding: 8px 14px;
+  padding: 8px 12px;
   background: #0FA6A0;
   color: white;
   border: none;
@@ -992,6 +996,8 @@ body.dark-mode .load-more-btn {
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  height: 36px;
+  flex: 1;
 }
 
 .add-to-cart-btn:hover:not(:disabled) {
@@ -1028,26 +1034,24 @@ body.dark-mode .load-more-btn {
 }
 
 .view-details-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 2px 8px;
-  background: #F2F4F7;
-  color: #344054;
-  border: 1px solid #E4E7EC;
-  border-radius: 4px;
-  font-size: 0.65rem;
+  padding: 8px 12px;
+  background: white;
+  color: #0FA6A0;
+  border: 1px solid #0FA6A0;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
-  z-index: 10;
+  height: 36px;
+  flex: 1;
 }
 
 .view-details-btn:hover {
-  background: #E4E7EC;
-  transform: scale(1.04);
-  box-shadow: 0 2px 6px rgba(52, 64, 84, 0.2);
+  background: #F2F4F7;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(15, 166, 160, 0.2);
 }
 
 /* Description Modal */
